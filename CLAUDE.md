@@ -11,6 +11,31 @@ At the start of every session in this project folder, do the following:
 Course repo: `github.com/exiao/claude-code-course`
 Lesson index is in `instructions.md` under **Course Progress**.
 
+## Quality Gates — Run These Organically
+
+### When to run `npm test`
+- After any change to `utils.js` (the core business logic)
+- Before creating a PR
+- After merging a PR to verify nothing regressed
+- Any time you're unsure if a change broke something
+
+### When to run `npm run lint`
+- After editing `utils.js` or `utils.test.js`
+- Before creating a PR
+- If you add new utility functions — lint them before committing
+
+### When to do a code review (`/superpowers-reviews`)
+- Before merging any PR — dispatch the code-reviewer subagent against the diff
+- When making a significant UI or logic change
+- When adding new files or dependencies
+- The reviewer skill is installed at `.agents/skills/superpowers-reviews/`
+- Trigger by getting the BASE_SHA and HEAD_SHA, then dispatching the agent with the diff range
+
+### Prototype-first workflow (existing rule — do not change)
+Never edit `index.html` directly. Build in `prototype.html` first, get approval, then copy to `index.html`.
+
+---
+
 ## What This Product Does
 RedInk is an AI-powered financial anomaly detection tool for equity analysts. It identifies quarters where a company's financial metrics diverged sharply from its own historical baseline and its QQQ peer group — flagging SEC filings that warrant closer analyst review.
 
