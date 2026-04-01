@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RedInk — Financial Anomaly Detection</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/papaparse@5/papaparse.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { background: #0f1117; color: #e2e8f0; font-family: 'SF Mono', 'Fira Code', monospace; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1a1d27; }
+    ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
+    .driver-bar-fill { transition: width 0.3s ease; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+// ── Constants ──────────────────────────────────────────────────────────────
+
+const COMPANY_NAMES = {
+  WBD:   'Warner Bros. Discovery',
+  FANG:  'Diamondback Energy',
+  MAR:   'Marriott International',
+  ADP:   'Automatic Data Processing',
+  BKNG:  'Booking Holdings',
+  TSLA:  'Tesla',
+  ALNY:  'Alnylam Pharmaceuticals',
+  APP:   'AppLovin',
+  STX:   'Seagate Technology',
+  MSTR:  'MicroStrategy',
+  EA:    'Electronic Arts',
+  MELI:  'MercadoLibre',
+  CEG:   'Constellation Energy',
+  SHOP:  'Shopify',
+  MDLZ:  'Mondelez International',
+  ADBE:  'Adobe',
+  GOOG:  'Alphabet (Class C)',
+  GOOGL: 'Alphabet (Class A)',
+};
+
+const DRIVER_LABELS = {
+  revenue_growth_yoy:    'Revenue Growth (YoY)',
+  assets_growth_yoy:     'Asset Growth (YoY)',
+  net_income_growth_yoy: 'Net Income Growth (YoY)',
+  net_margin:            'Net Margin',
+  debt_to_assets:        'Debt / Assets',
+  equity_to_assets:      'Equity / Assets',
+  accrual_ratio:         'Accrual Ratio',
+  ocf_to_net_income:     'OCF / Net Income',
+};
+
+const STORAGE_KEY = 'redink_reviews';
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function getCompanyName(ticker) {
+  return COMPANY_NAMES[ticker] || ticker;
+}
+
+function scoreColor(score) {
+  if (score >= 95) return { bg: 'bg-red-600', text: 'text-red-400', border: 'border-red-600' };
+  if (score >= 85) return { bg: 'bg-orange-500', text: 'text-orange-400', border: 'border-orange-500' };
+  return { bg: 'bg-yellow-500', text: 'text-yellow-400', border: 'border-yellow-500' };
+}
+
+function reviewKey(row) {
+  return `${row.ticker}_${row.report_date}`;
+}
+
+function formatPct(val) {
+  if (val === '' || val === null || val === undefined || isNaN(parseFloat(val))) return '—';
+  return (parseFloat(val) * 100).toFixed(1) + '%';
+}
+
+function formatZ(val) {
+  if (val === '' || val === null || val === undefined || isNaN(parseFloat(val))) return null;
+  return parseFloat(val);
+}
+
+function formatYear(dateStr) {
+  if (!dateStr) return '';
+  return dateStr.slice(0, 4);
+}
+
+function formatDisplayDate(dateStr) {
+  if (!dateStr) return '—';
+  const [y, m, d] = dateStr.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(m,10)-1]} ${d}, ${y}`;
+}
+
+function parseDriverSummary(summary) {
+  if (!summary) return [];
+  return summary.split(' | ').map(s => s.trim()).filter(Boolean);
+}
+
+function buildExplanation(row) {
+  const clauses = parseDriverSummary(row.driver_summary);
+  const clauseText = clauses.join('. ') + '.';
+  const score = parseFloat(row.anomaly_score_0_100).toFixed(1);
+  const selfScore = formatZ(row.self_history_score);
+  const peerScore = formatZ(row.peer_relative_score);
+  let comparison = '';
+  if (selfScore !== null && peerScore !== null) {
+    comparison = selfScore > peerScore
+      ? 'The divergence is strongest relative to the company\'s own history.'
+      : 'The divergence is strongest relative to QQQ peers.';
+  } else if (selfScore === null && peerScore !== null) {
+    comparison = 'Scoring is based on peer comparison only (no self-history available).';
+  }
+  return `This quarter was flagged because ${clauseText} The anomaly score of ${score} reflects divergence from both the company's own historical range and its QQQ peer group. ${comparison} Review the linked SEC filing for management commentary and financial statement detail.`;
+}
+
+function getBand(absZ) {
+  if (absZ >= 8) return { label: 'MAX',         color: 'text-red-300' };
+  if (absZ >= 5) return { label: 'Extreme',      color: 'text-red-400' };
+  if (absZ >= 3) return { label: 'Strong',       color: 'text-amber-400' };
+  if (absZ >= 2) return { label: 'Meaningful',   color: 'text-amber-300' };
+  if (absZ >= 1) return { label: 'Mild',         color: 'text-gray-400' };
+  return         { label: '',                    color: 'text-gray-500' };
+}
+
+// ── Review Status Dot ──────────────────────────────────────────────────────
+
+function ReviewDot({ status }) {
+  if (!status || status === 'unreviewed') return <span className="w-2 h-2 rounded-full bg-gray-600 inline-block" />;
+  if (status === 'good') return <span className="w-2 h-2 rounded-full bg-green-500 inline-block" title="Good" />;
+  if (status === 'needs_review') return <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" title="Needs Review" />;
+  if (status === 'skip') return <span className="w-2 h-2 rounded-full bg-gray-500 inline-block" title="Skip" />;
+  return null;
+}
+
+// ── Left Panel ─────────────────────────────────────────────────────────────
+
+function AnomalyList({ rows, selected, onSelect, reviewState, filters, onFilterChange }) {
+  const years = useMemo(() => {
+    const ys = [...new Set(rows.map(r => formatYear(r.report_date)))].sort().reverse();
+    return ys;
+  }, [rows]);
+
+  return (
+    <div className="flex flex-col h-full border-r border-gray-700">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
+        <span className="text-red-500 text-lg font-bold">●</span>
+        <span className="text-white font-bold tracking-wider text-sm">REDINK</span>
+        <span className="ml-auto text-gray-500 text-xs">{rows.length} flags</span>
+      </div>
+
+      {/* Filters */}
+      <div className="px-3 py-3 border-b border-gray-700 space-y-2">
+        <input
+          type="text"
+          placeholder="Search ticker or company..."
+          value={filters.ticker}
+          onChange={e => onFilterChange('ticker', e.target.value)}
+          className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gray-400"
+        />
+        <div className="flex gap-2">
+          <select
+            value={filters.year}
+            onChange={e => onFilterChange('year', e.target.value)}
+            className="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-gray-400"
+          >
+            <option value="">All Years</option>
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <select
+            value={filters.score}
+            onChange={e => onFilterChange('score', e.target.value)}
+            className="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-gray-400"
+          >
+            <option value="">All Scores</option>
+            <option value="95">95+</option>
+            <option value="85">85+</option>
+            <option value="70">70+</option>
+          </select>
+        </div>
+        <select
+          value={filters.status}
+          onChange={e => onFilterChange('status', e.target.value)}
+          className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-gray-400"
+        >
+          <option value="">All Reviews</option>
+          <option value="unreviewed">Unreviewed</option>
+          <option value="reviewed">Reviewed</option>
+        </select>
+      </div>
+
+      {/* List */}
+      <div className="flex-1 overflow-y-auto">
+        {rows.length === 0 && (
+          <div className="px-4 py-6 text-center text-gray-500 text-xs">No results match filters</div>
+        )}
+        {rows.map(row => {
+          const status = reviewState[reviewKey(row)];
+          const color = scoreColor(parseFloat(row.anomaly_score_0_100));
+          const isSelected = selected && reviewKey(selected) === reviewKey(row);
+          const driverLabel = DRIVER_LABELS[row.top_driver_1] || row.top_driver_1;
+          return (
+            <div
+              key={reviewKey(row)}
+              onClick={() => onSelect(row)}
+              className={`px-3 py-2.5 border-b border-gray-800 cursor-pointer hover:bg-gray-800 transition-colors ${isSelected ? 'bg-gray-800 border-l-2 border-l-red-500' : ''}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-white text-sm">{row.ticker}</span>
+                <span className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded ${color.bg} text-white`}>
+                  {parseFloat(row.anomaly_score_0_100).toFixed(1)}
+                </span>
+                <ReviewDot status={status} />
+              </div>
+              <div className="text-gray-400 text-xs mt-0.5 truncate">{getCompanyName(row.ticker)}</div>
+              <div className="text-gray-500 text-xs mt-0.5">{formatDisplayDate(row.report_date)}</div>
+              <div className="text-gray-500 text-xs mt-0.5 truncate">{driverLabel}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Driver Bar ─────────────────────────────────────────────────────────────
+
+const DRIVER_TOOLTIP = "This score shows how unusually this metric moved relative to the company's history and QQQ peers. Higher absolute values indicate stronger contribution to the anomaly flag. Positive means above baseline; negative means below baseline.";
+
+function DriverBar({ name, value }) {
+  const z = parseFloat(value);
+  if (isNaN(z)) return null;
+  const label = DRIVER_LABELS[name] || name;
+  const abs = Math.abs(z);
+  const isNeg = z < 0;
+  const isMax = abs >= 8;
+  const pct = isMax ? 100 : Math.min((abs / 8.0) * 100, 100);
+  const band = getBand(abs);
+  return (
+    <div className="mb-4" title={DRIVER_TOOLTIP}>
+      <div className="flex justify-between items-center mb-1.5">
+        <span className="text-gray-400 text-xs tracking-wide">{label}</span>
+        <div className="flex items-center gap-2.5">
+          <span className={`text-xs font-mono font-bold ${isNeg ? 'text-red-400' : 'text-amber-400'}`}>
+            {isNeg ? '↓' : '↑'} {z.toFixed(2)}
+          </span>
+          {band.label && (
+            <span className={`text-[10px] font-mono tracking-wider ${band.color} opacity-80`}>{band.label}</span>
+          )}
+        </div>
+      </div>
+      <div className="w-full bg-gray-800 rounded-full h-1">
+        <div
+          className={`driver-bar-fill h-1 rounded-full ${isNeg ? 'bg-gradient-to-r from-red-700 to-red-400' : 'bg-gradient-to-r from-amber-700 to-amber-400'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ── Driver Summary Banner ──────────────────────────────────────────────────
+
+function DriverSummaryBanner() {
+  return (
+    <div className="mb-4 border-l-2 border-gray-700 pl-3 py-0.5 text-xs text-gray-500 leading-relaxed">
+      Deviation from company history &amp; QQQ peers.{' '}
+      <span className="text-amber-500">↑ above</span> · <span className="text-red-500">↓ below</span> baseline.{' '}
+      <span className="text-gray-600">Mild (1–2) · Strong (3–5) · Extreme (5+)</span>
+    </div>
+  );
+}
+
+// ── Trust Chips ────────────────────────────────────────────────────────────
+
+function Chip({ children, ok }) {
+  const base = 'text-[10px] px-2 py-1 rounded border font-mono tracking-wide';
+  const style = ok === false
+    ? 'border-red-800/60 text-red-500 bg-red-900/10'
+    : 'border-gray-700/60 text-gray-500 bg-transparent';
+  return <span className={`${base} ${style}`}>{children}</span>;
+}
+
+// ── Right Panel ────────────────────────────────────────────────────────────
+
+function AnomalyDetail({ row, reviewState, onReview }) {
+  if (!row) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-700 text-xs tracking-widest uppercase">
+        ← Select an anomaly
+      </div>
+    );
+  }
+
+  const score = parseFloat(row.anomaly_score_0_100);
+  const color = scoreColor(score);
+  const selfZ = formatZ(row.self_history_score);
+  const peerZ = formatZ(row.peer_relative_score);
+  const hasFiling = row.filing_url && row.filing_url.trim() !== '';
+  const hasSelf = selfZ !== null;
+  const status = reviewState[reviewKey(row)];
+  const explanation = buildExplanation(row);
+  const scoreLabel = score >= 95 ? 'EXTREME' : score >= 85 ? 'HIGH' : 'MODERATE';
+
+  return (
+    <div className="flex flex-col h-full overflow-y-auto">
+      {/* Colored top accent line */}
+      <div className={`h-px flex-shrink-0 ${color.bg} opacity-70`} />
+
+      {/* Header */}
+      <div className="px-6 pt-5 pb-4 border-b border-gray-800">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-white text-3xl font-bold tracking-tight">{row.ticker}</span>
+              <span className={`text-[10px] font-mono font-bold tracking-[0.15em] ${color.text}`}>{scoreLabel}</span>
+            </div>
+            <div className="text-gray-500 text-xs mt-0.5 truncate">{getCompanyName(row.ticker)}</div>
+            <div className="text-gray-700 text-xs mt-2 flex items-center gap-2">
+              <span>Report <span className="text-gray-500">{formatDisplayDate(row.report_date)}</span></span>
+              <span>·</span>
+              <span>Filed <span className="text-gray-500">{formatDisplayDate(row.filing_date)}</span></span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end flex-shrink-0 pt-0.5">
+            <div className={`text-4xl font-bold font-mono ${color.text}`}>{score.toFixed(1)}</div>
+            <div className="text-gray-700 text-[9px] tracking-[0.15em] uppercase mt-0.5">Anomaly Score</div>
+          </div>
+        </div>
+
+        {/* Sub-scores */}
+        <div className="flex mt-4 border border-gray-800 rounded divide-x divide-gray-800">
+          {[
+            ['Self History', hasSelf ? selfZ.toFixed(2) : '—'],
+            ['Peer Relative', peerZ !== null ? peerZ.toFixed(2) : '—'],
+            ['Combined', formatZ(row.combined_signal_strength) !== null ? parseFloat(row.combined_signal_strength).toFixed(2) : '—'],
+          ].map(([label, val]) => (
+            <div key={label} className="flex-1 px-4 py-2.5 text-center">
+              <div className="text-gray-700 text-[9px] uppercase tracking-[0.12em]">{label}</div>
+              <div className="text-gray-300 font-mono text-sm font-semibold mt-0.5">{val}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Drivers */}
+      <div className="px-6 py-4 border-b border-gray-800">
+        <div className="text-[9px] tracking-[0.18em] uppercase text-gray-700 mb-3 pb-2 border-b border-gray-800/80">Top Drivers</div>
+        <DriverSummaryBanner />
+        <DriverBar name={row.top_driver_1} value={row.top_driver_1_value} />
+        <DriverBar name={row.top_driver_2} value={row.top_driver_2_value} />
+        <DriverBar name={row.top_driver_3} value={row.top_driver_3_value} />
+      </div>
+
+      {/* Explanation */}
+      <div className="px-6 py-4 border-b border-gray-800">
+        <div className="text-[9px] tracking-[0.18em] uppercase text-gray-700 mb-2.5 pb-2 border-b border-gray-800/80">Analysis</div>
+        <p className="text-gray-500 text-xs leading-relaxed">{explanation}</p>
+      </div>
+
+      {/* Metrics */}
+      <div className="px-6 py-4 border-b border-gray-800">
+        <div className="text-[9px] tracking-[0.18em] uppercase text-gray-700 mb-3 pb-2 border-b border-gray-800/80">Key Metrics</div>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            ['Revenue Growth (YoY)', row.revenue_growth_yoy],
+            ['Net Margin',           row.net_margin],
+            ['Net Income Growth',    row.net_income_growth_yoy],
+            ['OCF / Net Income',     row.ocf_to_net_income],
+          ].map(([label, val]) => (
+            <div key={label} className="border border-gray-800 rounded px-3 py-2.5">
+              <div className="text-gray-700 text-[9px] uppercase tracking-wide">{label}</div>
+              <div className={`font-mono text-sm font-bold mt-1 ${parseFloat(val) < 0 ? 'text-red-400' : 'text-gray-300'}`}>
+                {formatPct(val)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Trust Chips */}
+      <div className="px-6 py-3 border-b border-gray-800">
+        <div className="flex flex-wrap gap-1.5">
+          <Chip>{row.num_features_used} features used</Chip>
+          <Chip>Model: brick3_q_v2</Chip>
+          <Chip ok={hasFiling}>Filing link {hasFiling ? '✓' : '✗'}</Chip>
+          <Chip>{hasSelf ? 'Self + Peer scoring' : 'Peer only'}</Chip>
+        </div>
+      </div>
+
+      {/* SEC Filing Button */}
+      <div className="px-6 py-4 border-b border-gray-800">
+        {hasFiling ? (
+          <a
+            href={row.filing_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full border border-blue-800/50 hover:border-blue-600/70 hover:bg-blue-950/30 text-blue-500 hover:text-blue-400 text-xs font-semibold tracking-wide px-4 py-2.5 rounded transition-all duration-200"
+          >
+            View SEC Filing →
+          </a>
+        ) : (
+          <button
+            disabled
+            title="No filing URL available"
+            className="flex items-center justify-center gap-2 w-full border border-gray-800 text-gray-700 text-xs font-semibold px-4 py-2.5 rounded cursor-not-allowed"
+          >
+            SEC Filing Unavailable
+          </button>
+        )}
+      </div>
+
+      {/* Review Interface */}
+      <div className="px-6 py-4">
+        <div className="text-[9px] tracking-[0.18em] uppercase text-gray-700 mb-3 pb-2 border-b border-gray-800/80">Analyst Review</div>
+        <div className="flex gap-2">
+          {[
+            { key: 'good',         label: '✓ Good',        active: 'bg-green-950/60 border-green-700/60 text-green-400',   inactive: 'border-gray-800 text-gray-600 hover:border-green-800/60 hover:text-green-500' },
+            { key: 'needs_review', label: '⚠ Needs Review', active: 'bg-amber-950/60 border-amber-700/60 text-amber-400',   inactive: 'border-gray-800 text-gray-600 hover:border-amber-800/60 hover:text-amber-500' },
+            { key: 'skip',         label: '✗ Skip',         active: 'bg-gray-800/80 border-gray-600/60 text-gray-400',      inactive: 'border-gray-800 text-gray-600 hover:border-gray-600/60 hover:text-gray-400' },
+          ].map(btn => (
+            <button
+              key={btn.key}
+              onClick={() => onReview(row, btn.key === status ? null : btn.key)}
+              className={`flex-1 text-xs font-semibold px-3 py-2.5 rounded border transition-all duration-200 ${status === btn.key ? btn.active : btn.inactive}`}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+        {status && (
+          <div className="mt-2 text-[10px] text-gray-700">
+            Marked as <span className="text-gray-500">{status.replace('_', ' ')}</span> · click again to clear
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── App Root ───────────────────────────────────────────────────────────────
+
+function App() {
+  const [allRows, setAllRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [reviewState, setReviewState] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch { return {}; }
+  });
+  const [filters, setFilters] = useState({ ticker: '', year: '', score: '', status: '' });
+
+  useEffect(() => {
+    Papa.parse('top_anomaly_review_pack.csv', {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: ({ data }) => {
+        const sorted = data.sort((a, b) =>
+          parseFloat(b.anomaly_score_0_100) - parseFloat(a.anomaly_score_0_100)
+        );
+        setAllRows(sorted);
+        setSelected(sorted[0] || null);
+        setLoading(false);
+      },
+      error: () => setLoading(false),
+    });
+  }, []);
+
+  const filteredRows = useMemo(() => {
+    return allRows.filter(row => {
+      if (filters.ticker) {
+        const q = filters.ticker.toLowerCase();
+        const name = getCompanyName(row.ticker).toLowerCase();
+        if (!row.ticker.toLowerCase().includes(q) && !name.includes(q)) return false;
+      }
+      if (filters.year && formatYear(row.report_date) !== filters.year) return false;
+      if (filters.score && parseFloat(row.anomaly_score_0_100) < parseFloat(filters.score)) return false;
+      if (filters.status === 'unreviewed' && reviewState[reviewKey(row)]) return false;
+      if (filters.status === 'reviewed' && !reviewState[reviewKey(row)]) return false;
+      return true;
+    });
+  }, [allRows, filters, reviewState]);
+
+  function handleFilterChange(key, val) {
+    setFilters(f => ({ ...f, [key]: val }));
+  }
+
+  function handleReview(row, status) {
+    const key = reviewKey(row);
+    setReviewState(prev => {
+      const next = { ...prev };
+      if (status === null) delete next[key];
+      else next[key] = status;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-500 text-sm">
+        Loading anomaly data...
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-screen overflow-hidden">
+      {/* Disclaimer */}
+      <div className="flex-shrink-0 bg-amber-950/60 border-b border-amber-800/60 px-4 py-1.5 flex items-center justify-center gap-3 text-xs text-amber-300/90">
+        <span className="font-bold tracking-wide">⚠ EDUCATIONAL TOOL ONLY</span>
+        <span className="text-amber-600">·</span>
+        <span>Not investment or trading advice. For learning purposes only.</span>
+        <span className="text-amber-600">·</span>
+        <span className="text-amber-400/70 italic">AI is dope — it also hallucinates.</span>
+      </div>
+
+      {/* Panels */}
+      <div className="flex flex-1 overflow-hidden">
+      {/* Left Panel */}
+      <div className="w-72 flex-shrink-0 flex flex-col h-full overflow-hidden">
+        <AnomalyList
+          rows={filteredRows}
+          selected={selected}
+          onSelect={setSelected}
+          reviewState={reviewState}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+        />
+      </div>
+
+      {/* Right Panel */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-900">
+        <AnomalyDetail
+          row={selected}
+          reviewState={reviewState}
+          onReview={handleReview}
+        />
+      </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
