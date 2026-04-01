@@ -1,0 +1,28 @@
+{
+  "name": "redink-ui",
+  "version": "1.0.0",
+  "description": "**AI-powered financial anomaly detection for equity analysts.**",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint utils.js utils.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sheldongomes1/redink-ui.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/sheldongomes1/redink-ui/issues"
+  },
+  "homepage": "https://github.com/sheldongomes1/redink-ui#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "vitest": "^4.1.2"
+  }
+}
