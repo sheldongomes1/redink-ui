@@ -392,14 +392,11 @@ Coverage: QQQ constituents, 10-Q and 10-K filings
 | 05 | 05-leverage-plans.md | Leverage Plans | ✅ Complete |
 | 06 | 06-brainstorm-features.md | Brainstorm Features | ✅ Complete |
 | 07 | 07-skills-exercise.md | Skills Exercise | ✅ Complete |
-| 08 | 08-style-guide-exercise.md | Style Guide Exercise | ⏸ Paused |
+| 08 | 08-style-guide-exercise.md | Style Guide Exercise | 🔄 **Current** |
 | 09 | 09-analyze-exercise.md | Analyze Exercise | ⬜ Not started |
-| 10 | 10-analyze-your-data.md | Analyze Your Data | 🔄 **Current** |
-| 12 | 12-marketing-assets.md | Marketing Assets | ⬜ Not started |
-| 13 | 13-brand-voice.md | Brand Voice | ⬜ Not started |
-| 14 | 14-competitive-analysis.md | Competitive Analysis | ⬜ Not started |
-| 15 | 15-design-for-agents.md | Design for Agents | ⬜ Not started |
-| 16 | 16-openclaw.md | OpenClaw | ⬜ Not started |
+| 10 | 10-analyze-your-data.md | Analyze Your Data | ⬜ Not started |
+| 11 | 11-automate-your-documentation.md | Automate Your Documentation | ⬜ Not started |
+| 12 | 12-create-your-chief-of-staff.md | Create Your Chief of Staff | ⬜ Not started |
 | 18e | 18e-github-exercise.md | GitHub Exercise | ✅ Complete |
 | 19e | 19e-architecture-exercise.md | Architecture Exercise | ✅ Complete |
 | 20e | 20e-tests-and-linter-exercise.md | Tests and Linter Exercise | ✅ Complete |
@@ -407,6 +404,6 @@ Coverage: QQQ constituents, 10-Q and 10-K filings
 | 22e | 22e-publish-your-app-exercise.md | Publish Your App Exercise | ✅ Complete |
 | 23e | 23e-cicd-pipeline-exercise.md | CI/CD Pipeline Exercise | ✅ Complete |
 
-**Current lesson:** Course complete ✅
+**Current lesson:** `08-style-guide-exercise.md` — Style Guide Exercise
 
 > Claude: Update this table and the "Current lesson" line whenever a lesson is completed or the student moves on.
