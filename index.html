@@ -937,6 +937,195 @@ function Disclaimer() {
   );
 }
 
+// ── Insights Panel ────────────────────────────────────────────────────────────
+
+const DRIVER_LABELS_SHORT = {
+  revenue_growth_yoy:   'Revenue Growth',
+  assets_growth_yoy:    'Asset Growth',
+  net_income_growth_yoy:'Net Income Growth',
+  net_margin:           'Net Margin',
+  debt_to_assets:       'Debt/Assets',
+  equity_to_assets:     'Equity/Assets',
+  accrual_ratio:        'Accrual Ratio',
+  ocf_to_net_income:    'OCF/Net Income',
+};
+
+// Keyed by sorted pair for canonical lookup
+const PAIR_NOTES = {
+  'net_income_growth_yoy + revenue_growth_yoy': 'Both top and bottom line expanding together — typically organic growth or a strong cyclical recovery.',
+  'assets_growth_yoy + revenue_growth_yoy':     'Balance sheet expanding alongside revenue — common in M&A quarters or heavy capex cycles.',
+  'assets_growth_yoy + net_margin':             'Assets surging while profitability shifts — classic post-acquisition integration pattern.',
+  'accrual_ratio + net_margin':                 'Non-cash earnings with unusual margin — earnings quality concern, check if cash supports reported income.',
+  'equity_to_assets + net_margin':              'Book value and profitability moving together — often reflects write-downs or capital structure changes.',
+  'net_margin + ocf_to_net_income':             'Profitability and cash conversion both unusual — strong signal for earnings quality review.',
+};
+
+function InsightsStatCard({ label, value, sub, color }) {
+  return (
+    <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '16px 20px' }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: color || C.black, fontFamily: 'ui-monospace, monospace', letterSpacing: '-0.02em' }}>{value}</div>
+      <div style={{ fontSize: 11, color: C.gray400, marginTop: 4 }}>{sub}</div>
+    </div>
+  );
+}
+
+function InsightsBar({ pct, color }) {
+  return (
+    <div style={{ flex: 1, height: 16, background: C.gray100, borderRadius: 4, overflow: 'hidden' }}>
+      <div style={{ height: '100%', width: `${Math.max(2, pct * 100)}%`, background: color, borderRadius: 4, transition: 'width 0.45s cubic-bezier(0.4,0,0.2,1)' }} />
+    </div>
+  );
+}
+
+function InsightsPanel({ insights }) {
+  if (!insights || !insights.total_rows) {
+    return (
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', color: C.gray400, fontSize:13 }}>
+        Loading insights...
+      </div>
+    );
+  }
+
+  const { score_distribution: sd, top_flagged_tickers, flags_by_year, top_drivers, top_driver_pairs = [], coverage, serial_flaggers } = insights;
+  const total      = insights.total_rows;
+  const signalRate = (((sd.extreme_95_plus + sd.high_85_94) / total) * 100).toFixed(1);
+  const maxTicker  = Math.max(...top_flagged_tickers.map(t => t.extreme_flags));
+  const maxDriver  = Math.max(...top_drivers.map(d => d.count));
+  const maxYear    = Math.max(...Object.values(flags_by_year).map(d => d.extreme + d.high));
+
+  return (
+    <div style={{ overflow: 'auto', height: '100%', padding: '24px 32px', background: C.gray50 }}>
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 6 }}>Dataset Insights</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: C.black }}>QQQ Filing Anomaly Patterns</div>
+        <div style={{ fontSize: 13, color: C.gray500, marginTop: 4 }}>Full dataset · {total.toLocaleString()} filings scored · 2021–2025</div>
+      </div>
+
+      {/* Headline stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+        <InsightsStatCard label="Filings Scored"     value={total.toLocaleString()}              sub="QQQ 10-Q filings" />
+        <InsightsStatCard label="Extreme Flags"      value={sd.extreme_95_plus}                  sub={`${(sd.extreme_95_plus/total*100).toFixed(1)}% of total`} color="#dc2626" />
+        <InsightsStatCard label="Signal Rate"        value={`${signalRate}%`}                    sub="score ≥ 85 threshold" color="#c2410c" />
+        <InsightsStatCard label="Self + Peer Cover"  value={`${coverage.self_and_peer_pct}%`}    sub="have historical baseline" />
+      </div>
+
+      {/* Row 1: Year trend + Top tickers */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+
+        {/* Year trend */}
+        <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '20px 24px' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 16 }}>Flags by Year</div>
+          {Object.entries(flags_by_year).sort().map(([year, d]) => (
+            <div key={year} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{ width: 36, fontSize: 12, fontWeight: 600, color: C.gray600, flexShrink: 0 }}>{year}</div>
+              <div style={{ flex: 1, position: 'relative', height: 20, background: C.gray100, borderRadius: 4, overflow: 'hidden' }}>
+                {/* Combined total (extreme + high) as base layer */}
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${((d.extreme + d.high) / maxYear) * 100}%`, background: '#fed7aa', borderRadius: 4 }} />
+                {/* Extreme-only overlay from left */}
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${(d.extreme / maxYear) * 100}%`, background: '#fca5a5', borderRadius: 4 }} />
+              </div>
+              <div style={{ width: 56, fontSize: 11, color: C.gray500, textAlign: 'right', flexShrink: 0 }}>
+                <span style={{ color: '#dc2626', fontWeight: 600 }}>{d.extreme}</span>
+                <span style={{ color: C.gray300 }}> + </span>
+                <span style={{ color: '#c2410c' }}>{d.high}</span>
+              </div>
+            </div>
+          ))}
+          <div style={{ marginTop: 12, display: 'flex', gap: 12, fontSize: 10, color: C.gray400 }}>
+            <span><span style={{ color: '#fca5a5' }}>■</span> Extreme (95+)</span>
+            <span><span style={{ color: '#fed7aa' }}>■</span> High (85–94)</span>
+          </div>
+        </div>
+
+        {/* Top tickers */}
+        <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '20px 24px' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 16 }}>Most Flagged Tickers (Extreme)</div>
+          {top_flagged_tickers.slice(0, 8).map(t => (
+            <div key={t.ticker} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{ width: 44, fontSize: 12, fontWeight: 700, color: C.black, fontFamily: 'ui-monospace, monospace', flexShrink: 0 }}>{t.ticker}</div>
+              <InsightsBar pct={t.extreme_flags / maxTicker} color={C.accent} />
+              <div style={{ width: 16, fontSize: 12, fontWeight: 600, color: C.accent, textAlign: 'right', flexShrink: 0 }}>{t.extreme_flags}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Row 2: Top drivers + Driver pairs */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+
+        {/* Top drivers */}
+        <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '20px 24px' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 4 }}>Top Anomaly Drivers</div>
+          <div style={{ fontSize: 11, color: C.gray400, marginBottom: 16 }}>Primary driver in extreme flags (95+)</div>
+          {top_drivers.map(d => (
+            <div key={d.driver} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{ width: 130, fontSize: 12, color: C.gray700, flexShrink: 0 }}>{DRIVER_LABELS_SHORT[d.driver] || d.driver}</div>
+              <InsightsBar pct={d.count / maxDriver} color="#f59e0b" />
+              <div style={{ width: 24, fontSize: 12, fontWeight: 600, color: C.gray700, textAlign: 'right', flexShrink: 0 }}>{d.count}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Driver pairs */}
+        <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '20px 24px' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 4 }}>Top Driver Combinations</div>
+          <div style={{ fontSize: 11, color: C.gray400, marginBottom: 16 }}>Co-occurring driver pairs in extreme flags</div>
+          {top_driver_pairs.map((p, i) => {
+            const [a, b] = p.pair.split(' + ');
+            const noteKey = [a, b].sort().join(' + ');
+            const note = PAIR_NOTES[noteKey] || null;
+            return (
+              <div key={i} style={{ marginBottom: 8, padding: '10px 12px', background: C.gray50, borderRadius: 6, border: `1px solid ${C.gray100}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: note ? 5 : 0 }}>
+                  <div style={{ flex: 1, fontSize: 12, color: C.black }}>
+                    <span style={{ fontWeight: 500 }}>{DRIVER_LABELS_SHORT[a] || a}</span>
+                    <span style={{ color: C.gray300, margin: '0 5px' }}>+</span>
+                    <span style={{ fontWeight: 500 }}>{DRIVER_LABELS_SHORT[b] || b}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    {p.peak_period && (
+                      <span style={{ fontSize: 10, color: C.gray400, fontFamily: 'ui-monospace, monospace' }}>
+                        peak {p.peak_period} ({p.peak_period_count}×)
+                      </span>
+                    )}
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>{p.count}×</div>
+                  </div>
+                </div>
+                {note && (
+                  <div style={{ fontSize: 11, color: C.gray500, lineHeight: 1.5 }}>{note}</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Serial flaggers */}
+      {serial_flaggers && serial_flaggers.length > 0 && (
+        <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '20px 24px', marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 4 }}>Serial Flaggers</div>
+          <div style={{ fontSize: 11, color: C.gray400, marginBottom: 16 }}>Tickers with 3+ extreme anomaly quarters — structurally unusual in the QQQ universe</div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {serial_flaggers.map(sf => (
+              <div key={sf.ticker} style={{ padding: '10px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.black, fontFamily: 'ui-monospace, monospace' }}>{sf.ticker}</span>
+                <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>{sf.count} extreme flags</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div style={{ fontSize: 11, color: C.gray400, textAlign: 'center', paddingTop: 8 }}>
+        Analysis based on {total.toLocaleString()} QQQ 10-Q filings · Model: brick3_q_v2 · Generated {insights.generated}
+      </div>
+    </div>
+  );
+}
+
 // ── App Root ──────────────────────────────────────────────────────────────────
 
 function App() {
@@ -944,6 +1133,8 @@ function App() {
   const [loading,      setLoading]      = useState(true);
   const [selected,     setSelected]     = useState(null);
   const [analysisData, setAnalysisData] = useState({});
+  const [insightsData, setInsightsData] = useState(null);
+  const [view,         setView]         = useState('review'); // 'review' | 'insights'
   const [reviewState, setReviewState] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
     catch { return {}; }
@@ -959,11 +1150,10 @@ function App() {
         error: reject,
       });
     });
-    const analysisPromise = fetch('analysis.json')
-      .then(r => r.json())
-      .catch(() => ({}));
+    const analysisPromise = fetch('analysis.json').then(r => r.json()).catch(() => ({}));
+    const insightsPromise = fetch('insights.json').then(r => r.json()).catch(() => null);
 
-    Promise.all([csvPromise, analysisPromise]).then(([data, analysis]) => {
+    Promise.all([csvPromise, analysisPromise, insightsPromise]).then(([data, analysis, insights]) => {
       const sorted = [...data].sort((a, b) =>
         parseFloat(b.anomaly_score_0_100) - parseFloat(a.anomaly_score_0_100)
       );
@@ -973,6 +1163,7 @@ function App() {
       }, '');
       setAllRows(sorted);
       setAnalysisData(analysis);
+      setInsightsData(insights);
       setFilters(f => ({ ...f, year: mostRecentYear }));
       setSelected(sorted.find(r => fmtYear(r.report_date) === mostRecentYear) || sorted[0] || null);
       setLoading(false);
@@ -1029,25 +1220,56 @@ function App() {
         allRows={allRows}
         reviewState={reviewState}
       />
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <Sidebar
-          rows={filteredRows}
-          allRows={allRows}
-          selected={selected}
-          onSelect={setSelected}
-          reviewState={reviewState}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-        />
-        <div style={{ flex: 1, overflow: 'hidden', background: C.gray50 }}>
-          <DetailPanel
-            row={selected}
-            reviewState={reviewState}
-            onReview={handleReview}
-            analysisData={analysisData}
-          />
-        </div>
+
+      {/* Tab nav */}
+      <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${C.gray200}`, background: C.white, paddingLeft: 20, flexShrink: 0 }}>
+        {[
+          { key: 'review',   label: 'Anomaly Review' },
+          { key: 'insights', label: 'Dataset Insights' },
+        ].map(tab => (
+          <button key={tab.key} onClick={() => setView(tab.key)} style={{
+            padding: '9px 16px',
+            fontSize: 13,
+            fontWeight: view === tab.key ? 600 : 400,
+            color: view === tab.key ? C.accent : C.gray500,
+            background: 'none',
+            border: 'none',
+            borderBottom: view === tab.key ? `2px solid ${C.accent}` : '2px solid transparent',
+            marginBottom: -1,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            transition: 'color 0.15s',
+          }}>
+            {tab.label}
+          </button>
+        ))}
       </div>
+
+      {view === 'insights' ? (
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <InsightsPanel insights={insightsData} />
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          <Sidebar
+            rows={filteredRows}
+            allRows={allRows}
+            selected={selected}
+            onSelect={setSelected}
+            reviewState={reviewState}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+          />
+          <div style={{ flex: 1, overflow: 'hidden', background: C.gray50 }}>
+            <DetailPanel
+              row={selected}
+              reviewState={reviewState}
+              onReview={handleReview}
+              analysisData={analysisData}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
