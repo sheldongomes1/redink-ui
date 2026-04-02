@@ -950,6 +950,34 @@ const DRIVER_LABELS_SHORT = {
   ocf_to_net_income:    'OCF/Net Income',
 };
 
+// Keyed by sorted pair for canonical lookup
+const PAIR_NOTES = {
+  'net_income_growth_yoy + revenue_growth_yoy': 'Both top and bottom line expanding together — typically organic growth or a strong cyclical recovery.',
+  'assets_growth_yoy + revenue_growth_yoy':     'Balance sheet expanding alongside revenue — common in M&A quarters or heavy capex cycles.',
+  'assets_growth_yoy + net_margin':             'Assets surging while profitability shifts — classic post-acquisition integration pattern.',
+  'accrual_ratio + net_margin':                 'Non-cash earnings with unusual margin — earnings quality concern, check if cash supports reported income.',
+  'equity_to_assets + net_margin':              'Book value and profitability moving together — often reflects write-downs or capital structure changes.',
+  'net_margin + ocf_to_net_income':             'Profitability and cash conversion both unusual — strong signal for earnings quality review.',
+};
+
+function InsightsStatCard({ label, value, sub, color }) {
+  return (
+    <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '16px 20px' }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: color || C.black, fontFamily: 'ui-monospace, monospace', letterSpacing: '-0.02em' }}>{value}</div>
+      <div style={{ fontSize: 11, color: C.gray400, marginTop: 4 }}>{sub}</div>
+    </div>
+  );
+}
+
+function InsightsBar({ pct, color }) {
+  return (
+    <div style={{ flex: 1, height: 16, background: C.gray100, borderRadius: 4, overflow: 'hidden' }}>
+      <div style={{ height: '100%', width: `${Math.max(2, pct * 100)}%`, background: color, borderRadius: 4, transition: 'width 0.45s cubic-bezier(0.4,0,0.2,1)' }} />
+    </div>
+  );
+}
+
 function InsightsPanel({ insights }) {
   if (!insights || !insights.total_rows) {
     return (
@@ -959,26 +987,12 @@ function InsightsPanel({ insights }) {
     );
   }
 
-  const { score_distribution: sd, top_flagged_tickers, flags_by_year, top_drivers, top_driver_pairs, coverage, serial_flaggers } = insights;
+  const { score_distribution: sd, top_flagged_tickers, flags_by_year, top_drivers, top_driver_pairs = [], coverage, serial_flaggers } = insights;
   const total      = insights.total_rows;
   const signalRate = (((sd.extreme_95_plus + sd.high_85_94) / total) * 100).toFixed(1);
   const maxTicker  = Math.max(...top_flagged_tickers.map(t => t.extreme_flags));
   const maxDriver  = Math.max(...top_drivers.map(d => d.count));
   const maxYear    = Math.max(...Object.values(flags_by_year).map(d => d.extreme + d.high));
-
-  const StatCard = ({ label, value, sub, color }) => (
-    <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '16px 20px' }}>
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || C.black, fontFamily: 'ui-monospace, monospace', letterSpacing: '-0.02em' }}>{value}</div>
-      <div style={{ fontSize: 11, color: C.gray400, marginTop: 4 }}>{sub}</div>
-    </div>
-  );
-
-  const Bar = ({ pct, color }) => (
-    <div style={{ flex: 1, height: 16, background: C.gray100, borderRadius: 4, overflow: 'hidden' }}>
-      <div style={{ height: '100%', width: `${Math.max(2, pct * 100)}%`, background: color, borderRadius: 4, transition: 'width 0.45s cubic-bezier(0.4,0,0.2,1)' }} />
-    </div>
-  );
 
   return (
     <div style={{ overflow: 'auto', height: '100%', padding: '24px 32px', background: C.gray50 }}>
@@ -991,10 +1005,10 @@ function InsightsPanel({ insights }) {
 
       {/* Headline stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
-        <StatCard label="Filings Scored"     value={total.toLocaleString()}              sub="QQQ 10-Q filings" />
-        <StatCard label="Extreme Flags"      value={sd.extreme_95_plus}                  sub={`${(sd.extreme_95_plus/total*100).toFixed(1)}% of total`} color="#dc2626" />
-        <StatCard label="Signal Rate"        value={`${signalRate}%`}                    sub="score ≥ 85 threshold" color="#c2410c" />
-        <StatCard label="Self + Peer Cover"  value={`${coverage.self_and_peer_pct}%`}    sub="have historical baseline" />
+        <InsightsStatCard label="Filings Scored"     value={total.toLocaleString()}              sub="QQQ 10-Q filings" />
+        <InsightsStatCard label="Extreme Flags"      value={sd.extreme_95_plus}                  sub={`${(sd.extreme_95_plus/total*100).toFixed(1)}% of total`} color="#dc2626" />
+        <InsightsStatCard label="Signal Rate"        value={`${signalRate}%`}                    sub="score ≥ 85 threshold" color="#c2410c" />
+        <InsightsStatCard label="Self + Peer Cover"  value={`${coverage.self_and_peer_pct}%`}    sub="have historical baseline" />
       </div>
 
       {/* Row 1: Year trend + Top tickers */}
@@ -1007,7 +1021,9 @@ function InsightsPanel({ insights }) {
             <div key={year} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <div style={{ width: 36, fontSize: 12, fontWeight: 600, color: C.gray600, flexShrink: 0 }}>{year}</div>
               <div style={{ flex: 1, position: 'relative', height: 20, background: C.gray100, borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${(d.high / maxYear) * 100}%`, background: '#fed7aa', borderRadius: 4 }} />
+                {/* Combined total (extreme + high) as base layer */}
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${((d.extreme + d.high) / maxYear) * 100}%`, background: '#fed7aa', borderRadius: 4 }} />
+                {/* Extreme-only overlay from left */}
                 <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${(d.extreme / maxYear) * 100}%`, background: '#fca5a5', borderRadius: 4 }} />
               </div>
               <div style={{ width: 56, fontSize: 11, color: C.gray500, textAlign: 'right', flexShrink: 0 }}>
@@ -1029,7 +1045,7 @@ function InsightsPanel({ insights }) {
           {top_flagged_tickers.slice(0, 8).map(t => (
             <div key={t.ticker} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <div style={{ width: 44, fontSize: 12, fontWeight: 700, color: C.black, fontFamily: 'ui-monospace, monospace', flexShrink: 0 }}>{t.ticker}</div>
-              <Bar pct={t.extreme_flags / maxTicker} color={C.accent} />
+              <InsightsBar pct={t.extreme_flags / maxTicker} color={C.accent} />
               <div style={{ width: 16, fontSize: 12, fontWeight: 600, color: C.accent, textAlign: 'right', flexShrink: 0 }}>{t.extreme_flags}</div>
             </div>
           ))}
@@ -1046,7 +1062,7 @@ function InsightsPanel({ insights }) {
           {top_drivers.map(d => (
             <div key={d.driver} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <div style={{ width: 130, fontSize: 12, color: C.gray700, flexShrink: 0 }}>{DRIVER_LABELS_SHORT[d.driver] || d.driver}</div>
-              <Bar pct={d.count / maxDriver} color="#f59e0b" />
+              <InsightsBar pct={d.count / maxDriver} color="#f59e0b" />
               <div style={{ width: 24, fontSize: 12, fontWeight: 600, color: C.gray700, textAlign: 'right', flexShrink: 0 }}>{d.count}</div>
             </div>
           ))}
@@ -1058,22 +1074,8 @@ function InsightsPanel({ insights }) {
           <div style={{ fontSize: 11, color: C.gray400, marginBottom: 16 }}>Co-occurring driver pairs in extreme flags</div>
           {top_driver_pairs.map((p, i) => {
             const [a, b] = p.pair.split(' + ');
-            const PAIR_NOTES = {
-              'net_income_growth_yoy + revenue_growth_yoy': 'Both top and bottom line expanding together — typically organic growth or a strong cyclical recovery.',
-              'revenue_growth_yoy + net_income_growth_yoy': 'Both top and bottom line expanding together — typically organic growth or a strong cyclical recovery.',
-              'assets_growth_yoy + revenue_growth_yoy': 'Balance sheet expanding alongside revenue — common in M&A quarters or heavy capex cycles.',
-              'revenue_growth_yoy + assets_growth_yoy': 'Balance sheet expanding alongside revenue — common in M&A quarters or heavy capex cycles.',
-              'assets_growth_yoy + net_margin': 'Assets surging while profitability shifts — classic post-acquisition integration pattern.',
-              'net_margin + assets_growth_yoy': 'Assets surging while profitability shifts — classic post-acquisition integration pattern.',
-              'accrual_ratio + net_margin': 'Non-cash earnings with unusual margin — earnings quality concern, check if cash supports reported income.',
-              'net_margin + accrual_ratio': 'Non-cash earnings with unusual margin — earnings quality concern, check if cash supports reported income.',
-              'equity_to_assets + net_margin': 'Book value and profitability moving together — often reflects write-downs or capital structure changes.',
-              'net_margin + equity_to_assets': 'Book value and profitability moving together — often reflects write-downs or capital structure changes.',
-              'net_margin + ocf_to_net_income': 'Profitability and cash conversion both unusual — strong signal for earnings quality review.',
-              'ocf_to_net_income + net_margin': 'Profitability and cash conversion both unusual — strong signal for earnings quality review.',
-            };
             const noteKey = [a, b].sort().join(' + ');
-            const note = PAIR_NOTES[p.pair] || PAIR_NOTES[noteKey] || null;
+            const note = PAIR_NOTES[noteKey] || null;
             return (
               <div key={i} style={{ marginBottom: 8, padding: '10px 12px', background: C.gray50, borderRadius: 6, border: `1px solid ${C.gray100}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: note ? 5 : 0 }}>
