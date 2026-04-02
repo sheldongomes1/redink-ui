@@ -37,3 +37,4 @@ Revenue and assets surged post-merger while net margin collapsed to -34.8%. Exac
 ## Status
 
 v0 — loads top 30 highest-confidence anomaly flags. Review interface with localStorage persistence.
+
