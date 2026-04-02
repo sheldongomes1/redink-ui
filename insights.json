@@ -1,0 +1,181 @@
+{
+  "generated": "2026-04-02",
+  "total_rows": 1297,
+  "score_distribution": {
+    "extreme_95_plus": 65,
+    "high_85_94": 130,
+    "moderate_70_84": 195,
+    "low_under_70": 907
+  },
+  "top_flagged_tickers": [
+    {
+      "ticker": "ALNY",
+      "extreme_flags": 6
+    },
+    {
+      "ticker": "APP",
+      "extreme_flags": 6
+    },
+    {
+      "ticker": "MSTR",
+      "extreme_flags": 5
+    },
+    {
+      "ticker": "FANG",
+      "extreme_flags": 4
+    },
+    {
+      "ticker": "GOOG",
+      "extreme_flags": 4
+    },
+    {
+      "ticker": "GOOGL",
+      "extreme_flags": 4
+    },
+    {
+      "ticker": "WBD",
+      "extreme_flags": 3
+    },
+    {
+      "ticker": "TSLA",
+      "extreme_flags": 3
+    },
+    {
+      "ticker": "MAR",
+      "extreme_flags": 2
+    },
+    {
+      "ticker": "BKNG",
+      "extreme_flags": 2
+    }
+  ],
+  "flags_by_year": {
+    "2021": {
+      "total": 217,
+      "extreme": 17,
+      "high": 17
+    },
+    "2022": {
+      "total": 252,
+      "extreme": 19,
+      "high": 25
+    },
+    "2023": {
+      "total": 273,
+      "extreme": 12,
+      "high": 29
+    },
+    "2024": {
+      "total": 278,
+      "extreme": 9,
+      "high": 30
+    },
+    "2025": {
+      "total": 277,
+      "extreme": 8,
+      "high": 29
+    }
+  },
+  "top_drivers": [
+    {
+      "driver": "net_margin",
+      "count": 29
+    },
+    {
+      "driver": "revenue_growth_yoy",
+      "count": 19
+    },
+    {
+      "driver": "assets_growth_yoy",
+      "count": 10
+    },
+    {
+      "driver": "net_income_growth_yoy",
+      "count": 5
+    },
+    {
+      "driver": "ocf_to_net_income",
+      "count": 1
+    },
+    {
+      "driver": "accrual_ratio",
+      "count": 1
+    }
+  ],
+  "top_driver_pairs": [
+    {
+      "pair": "revenue_growth_yoy + net_income_growth_yoy",
+      "count": 11,
+      "peak_period": "2022 Q1",
+      "peak_period_count": 3
+    },
+    {
+      "pair": "revenue_growth_yoy + assets_growth_yoy",
+      "count": 9,
+      "peak_period": "2022 Q2",
+      "peak_period_count": 2
+    },
+    {
+      "pair": "net_margin + assets_growth_yoy",
+      "count": 9,
+      "peak_period": "2025 Q2",
+      "peak_period_count": 3
+    },
+    {
+      "pair": "net_margin + accrual_ratio",
+      "count": 6,
+      "peak_period": "2023 Q3",
+      "peak_period_count": 2
+    },
+    {
+      "pair": "net_margin + equity_to_assets",
+      "count": 6,
+      "peak_period": "2024 Q3",
+      "peak_period_count": 2
+    },
+    {
+      "pair": "net_margin + ocf_to_net_income",
+      "count": 5,
+      "peak_period": "2021 Q4",
+      "peak_period_count": 1
+    }
+  ],
+  "coverage": {
+    "self_and_peer_pct": 68,
+    "peer_only_pct": 25
+  },
+  "serial_flaggers": [
+    {
+      "ticker": "ALNY",
+      "count": 6
+    },
+    {
+      "ticker": "APP",
+      "count": 6
+    },
+    {
+      "ticker": "MSTR",
+      "count": 5
+    },
+    {
+      "ticker": "FANG",
+      "count": 4
+    },
+    {
+      "ticker": "GOOG",
+      "count": 4
+    },
+    {
+      "ticker": "GOOGL",
+      "count": 4
+    },
+    {
+      "ticker": "WBD",
+      "count": 3
+    },
+    {
+      "ticker": "TSLA",
+      "count": 3
+    }
+  ]
+}
