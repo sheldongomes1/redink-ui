@@ -1,0 +1,332 @@
+{
+  "WBD_2022-06-30": {
+    "flag": "Warner Bros. Discovery's Q2 2022 10-Q registered a score of 100 \u2014 the highest possible signal in the dataset. This quarter stands out because the company simultaneously showed explosive top-line and asset growth while profitability collapsed to deeply negative territory. The divergence is strongest relative to the company's own history.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew 221% year-over-year \u2014 a rate so far above normal it hit the model's ceiling. This almost certainly reflects the April 2022 merger close with WarnerMedia, which consolidated revenues from two previously separate entities into a single reporting line. One-time in nature, but the magnitude is impossible for the model to ignore.\n\n**Asset Growth (YoY):** Total assets expanded 311% year-over-year, also hitting the model ceiling. Goodwill, intangibles, and other acquired assets from the WarnerMedia transaction would account for the bulk of this jump. Look for a dramatic increase in intangible assets and goodwill on the balance sheet.\n\n**Net Margin:** Net margin came in at -34.8% \u2014 deeply negative and far below both the company's own history and QQQ peers. With revenues surging but profitability collapsing, the company was spending far more than it earned. Merger integration costs, restructuring charges, and goodwill impairment are the most likely culprits.",
+    "lookFor": [
+      "Check the income statement for impairment charges, restructuring costs, and transaction-related expenses that drove the -34.8% net margin",
+      "Review the balance sheet for goodwill and intangibles \u2014 large increases confirm acquisition accounting is behind the asset surge",
+      "Compare operating cash flow to net income to assess whether the reported loss reflects real cash outflows or non-cash charges",
+      "Look at management commentary on integration timelines, synergy targets, and the path back to profitability",
+      "Note whether revenue growth is entirely from consolidation or includes any organic contribution from legacy Discovery operations"
+    ]
+  },
+  "FANG_2022-03-31": {
+    "flag": "Diamondback Energy's Q1 2022 10-Q registered a score of 99.92 \u2014 an extreme anomaly signal. This quarter stands out because revenue growth, earnings growth, and net margin all surged simultaneously and well above QQQ peer norms. The divergence is strongest relative to QQQ peers, with no self-history score available, suggesting limited filing history for comparison.",
+    "detected": "**Revenue Growth (YoY):** Revenue more than doubled year-over-year \u2014 hitting the model's ceiling. For an E&P company in Q1 2022, this almost certainly reflects the dramatic oil price rally following Russia's invasion of Ukraine in February 2022, combined with Diamondback's expanded production base from prior acquisitions.\n\n**Net Income Growth (YoY):** Net income grew 154% year-over-year \u2014 far above the company's normal earnings trajectory. A combination of higher realized commodity prices and operating leverage on a largely fixed-cost production base would drive this kind of earnings acceleration.\n\n**Net Margin:** Net margin reached 32.4% \u2014 materially above both historical norms and peer group levels. This is the pricing-power story: when commodity prices spike, well-operated E&P companies see margin expansion that is extreme by historical standards but may not persist once prices normalize.",
+    "lookFor": [
+      "Review realized oil and gas prices versus the prior-year period to confirm commodity pricing is the primary revenue driver",
+      "Check whether production volumes also increased or whether the revenue gain is purely price-driven",
+      "Look at hedging disclosures \u2014 if the company was unhedged going into the commodity rally, margins may revert sharply when prices fall",
+      "Review guidance and forward strip assumptions for commodity price sensitivity",
+      "Note any acquisition activity that may have contributed to the revenue base expansion beyond the commodity price effect"
+    ]
+  },
+  "WBD_2022-09-30": {
+    "flag": "Warner Bros. Discovery's Q3 2022 10-Q registered a score of 99.85 \u2014 an extreme anomaly signal. Revenue and asset growth remained at the model ceiling following the WarnerMedia merger, while net income fell sharply year-over-year. The divergence is strongest relative to QQQ peers.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew 112% year-over-year \u2014 hitting the model ceiling for the second consecutive quarter. The merger with WarnerMedia continued to drive consolidated revenues far above legacy Discovery's standalone baseline, making the year-over-year comparisons extremely elevated.\n\n**Asset Growth (YoY):** Total assets grew 296% year-over-year \u2014 again at the model ceiling. Goodwill and intangibles from the merger remained on the balance sheet, and the company had not yet executed significant asset disposals.\n\n**Net Income Growth (YoY):** Net income fell approximately 1,479% year-over-year \u2014 collapsing from a prior-year profit to a deep loss. This signals ongoing merger-related charges, restructuring, and possibly additional impairments that more than offset the revenue gains from consolidation.",
+    "lookFor": [
+      "Identify the specific charges in the income statement that drove the dramatic net income decline \u2014 impairment, restructuring, or D&A acceleration",
+      "Check whether goodwill impairment charges have been taken on the WarnerMedia assets since the merger close",
+      "Review segment reporting to understand whether any individual business unit (e.g., streaming, linear TV, studio) is approaching profitability",
+      "Examine cash flow from operations \u2014 if operating cash flow is positive despite the net loss, non-cash charges are dominating the income statement",
+      "Look at debt levels and covenant compliance given the elevated leverage from the merger financing"
+    ]
+  },
+  "WBD_2023-03-31": {
+    "flag": "Warner Bros. Discovery's Q1 2023 10-Q registered a score of 99.77 \u2014 an extreme anomaly signal. The company continued to show revenue and asset growth at the model ceiling while net income remained deeply negative. The divergence is strongest relative to QQQ peers, reflecting WBD's continued post-merger restructuring.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew 139% year-over-year \u2014 hitting the model ceiling for the third consecutive quarter. At this point in the post-merger integration, the year-over-year comparisons still reflect the consolidation of WarnerMedia revenues into the reporting entity.\n\n**Asset Growth (YoY):** Total assets grew 186% year-over-year \u2014 also at the model ceiling. The acquired asset base remained on the balance sheet, though some asset disposals or write-downs may have begun narrowing the gap.\n\n**Net Income Growth (YoY):** Net income fell approximately 234% year-over-year, indicating the company swung from a profit to a loss or deepened an existing loss. Ongoing restructuring charges, integration costs, and amortization of acquired intangibles are likely contributors.",
+    "lookFor": [
+      "Check the income statement for the size and nature of restructuring charges \u2014 are they declining quarter-over-quarter, signaling integration progress?",
+      "Review management commentary on the timeline to profitability and when year-over-year revenue comparisons will normalize",
+      "Look at amortization of intangibles \u2014 the acquired WarnerMedia content library and other assets generate heavy non-cash amortization that suppresses reported earnings",
+      "Examine the streaming segment specifically \u2014 subscriber counts, ARPU, and content spend are key metrics management will discuss",
+      "Track debt paydown progress \u2014 deleveraging speed is a key indicator of financial health given the merger-era leverage"
+    ]
+  },
+  "MAR_2022-03-31": {
+    "flag": "Marriott International's Q1 2022 10-Q registered a score of 99.69 \u2014 an extreme anomaly signal. Revenue and earnings both surged far above QQQ peer norms as the travel recovery accelerated. No self-history score is available, so the comparison is peer-relative only.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew 81% year-over-year \u2014 hitting the model ceiling. The hospitality industry's recovery from COVID-19 travel restrictions drove a dramatic rebound in hotel occupancy and RevPAR. The magnitude of the year-over-year recovery made Marriott an extreme outlier among all QQQ constituents.\n\n**Net Income Growth (YoY):** Net income grew approximately 3,427% year-over-year \u2014 also hitting the model ceiling. Coming off near-zero earnings during the pandemic trough, even a modest dollar recovery in profits translates to an enormous percentage increase. The base effect is extreme.\n\n**Equity / Assets:** The equity-to-assets ratio ticked down slightly, mildly below historical norms. In the context of Marriott's asset-light model and ongoing share buybacks, this is a secondary signal worth noting but not alarming on its own.",
+    "lookFor": [
+      "Review RevPAR (revenue per available room) vs. the prior year and 2019 pre-pandemic levels to assess how much of the recovery is complete",
+      "Check whether the net income rebound is driven by operating leverage or contains one-time items such as gains on asset sales",
+      "Look at management's forward RevPAR guidance \u2014 sustained recovery versus a one-time reopening pop is the key distinction",
+      "Examine the fee revenue split (franchise vs. managed) to understand the quality and durability of the revenue base",
+      "Review share repurchase activity and its effect on the equity-to-assets ratio"
+    ]
+  },
+  "ADP_2021-12-31": {
+    "flag": "ADP's Q2 FY2022 10-Q (period ending December 31, 2021) registered a score of 99.61 \u2014 an extreme anomaly signal. Revenue growth hit the model ceiling while the balance sheet showed elevated debt and compressed equity relative to QQQ peers. No self-history score is available, so the comparison is peer-relative only.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew 332% year-over-year \u2014 hitting the model ceiling. ADP's employer services business saw a dramatic acceleration as the labor market surged in late 2021, but a 332% growth rate suggests more than organic recovery \u2014 it warrants investigation into whether acquisitions, reclassifications, or reporting changes contributed.\n\n**Debt / Assets:** Debt as a share of total assets rose to 91.5% \u2014 materially above historical and peer norms. This signals ADP was carrying very high leverage relative to its asset base during this period, which is unusual for a company of its stability profile.\n\n**Equity / Assets:** The equity cushion narrowed to 8.5% of total assets \u2014 well below historical levels. This is the mirror image of the elevated debt position and suggests ADP may have been executing large share buybacks or carrying retained losses that compressed book equity.",
+    "lookFor": [
+      "Investigate the revenue growth figure carefully \u2014 ADP's historical organic growth is in the high single digits, so a 332% rate requires explanation in the filing",
+      "Review the balance sheet for acquisitions, special purpose entities, or reclassifications that may explain the leverage profile",
+      "Check the share repurchase program \u2014 aggressive buybacks reduce equity and can explain a low equity-to-assets ratio even for a profitable company",
+      "Look at the debt maturity schedule and any covenants attached to the elevated borrowings",
+      "Examine management commentary on revenue drivers \u2014 headcount growth, pricing, and new client wins would explain organic acceleration"
+    ]
+  },
+  "BKNG_2022-03-31": {
+    "flag": "Booking Holdings' Q1 2022 10-Q registered a score of 99.54 \u2014 an extreme anomaly signal. Revenue growth hit the model ceiling as travel demand rebounded sharply from COVID-19 lows. Only 4 of 8 features contributed, and no self-history score is available, so the flag is peer-relative and somewhat narrower in scope.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew 136% year-over-year \u2014 hitting the model ceiling. As pandemic-era travel restrictions lifted globally in early 2022, Booking Holdings' booking volumes and revenue recovered dramatically from the severely depressed 2021 comparable period. The base effect is extreme.\n\n**Asset Growth (YoY):** Total assets declined modestly year-over-year \u2014 slightly below the peer norm. This is a minor secondary signal, possibly reflecting timing of working capital or the company's asset-light model not requiring capital accumulation during the recovery.\n\n**Debt / Assets:** Debt as a share of assets was modestly above peer norms. Booking Holdings carried elevated debt taken on during the pandemic to maintain liquidity, and the ratio remained slightly elevated as revenues recovered but debt had not yet been reduced.",
+    "lookFor": [
+      "Review room night volumes and average daily rates versus pre-pandemic 2019 levels to understand how complete the recovery is",
+      "Check whether the revenue rebound is tilted toward higher-margin alternative accommodations or lower-margin airline/car segments",
+      "Look at the debt reduction plan \u2014 management commentary on deleveraging from pandemic-era borrowings is key",
+      "Examine operating cash flow recovery relative to revenue to confirm the business is regenerating cash at pre-pandemic rates",
+      "Note any regional variation in recovery \u2014 European markets rebounded ahead of others given lifted travel restrictions"
+    ]
+  },
+  "BKNG_2021-06-30": {
+    "flag": "Booking Holdings' Q2 2021 10-Q registered a score of 99.46 \u2014 an extreme anomaly signal. Revenue growth hit the model ceiling as the initial travel recovery began in summer 2021. No self-history score is available, so the comparison is peer-relative only.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew 143% year-over-year \u2014 hitting the model ceiling. The summer 2021 travel recovery, particularly in Europe, drove a sharp rebound from the COVID-19 trough. Even with partial restrictions still in place, the improvement from Q2 2020 and Q2 2021's prior-year base was extreme.\n\n**Debt / Assets:** Debt as a share of total assets was modestly above peer norms at approximately 80%. Booking Holdings built up debt during 2020 as a precautionary liquidity measure, and repayment had not yet meaningfully reduced the leverage ratio by mid-2021.\n\n**Equity / Assets:** The equity cushion was slightly below historical norms \u2014 the mirror image of elevated debt. With buybacks paused and pandemic losses reducing retained earnings, book equity remained compressed.",
+    "lookFor": [
+      "Review room night volumes by geography \u2014 European recovery was much faster than North American and Asia-Pacific in summer 2021",
+      "Check management commentary on whether the 143% growth rate reflects genuine demand recovery or an extreme base-period effect from near-zero 2020 revenues",
+      "Look at the cash position and liquidity runway \u2014 management may comment on when debt repayment and buyback resumption are planned",
+      "Examine gross bookings versus net revenue to understand cancellation rates and booking window behavior",
+      "Note any guidance changes for the back half of 2021 as Delta variant uncertainty developed"
+    ]
+  },
+  "TSLA_2022-03-31": {
+    "flag": "Tesla's Q1 2022 10-Q registered a score of 99.38 \u2014 an extreme anomaly signal. Revenue and net income both grew far above QQQ peer norms, while net margin also expanded. No self-history score is available, so the comparison is peer-relative only.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew 81% year-over-year \u2014 hitting the model ceiling. Tesla's Gigafactory expansions in Austin and Berlin came online in early 2022, and global EV demand was accelerating rapidly. The growth rate dwarfed virtually all other large-cap peers.\n\n**Net Income Growth (YoY):** Net income grew 558% year-over-year \u2014 also hitting the model ceiling. Tesla's profitability inflection was one of the defining financial stories of 2021\u20132022: the company went from near-breakeven to generating substantial earnings as volumes scaled and manufacturing efficiency improved.\n\n**Net Margin:** Net margin reached 17.7% \u2014 above both historical norms and peer group levels. For an auto manufacturer, this margin profile is extraordinary and reflects Tesla's ability to raise prices faster than costs grew, alongside regulatory credit sales and software revenue.",
+    "lookFor": [
+      "Review delivery volumes and average selling price per vehicle \u2014 the interplay between volume growth and pricing is the key driver of the margin expansion story",
+      "Check regulatory credit revenue in the income statement \u2014 this is high-margin but non-recurring and inflates reported profitability",
+      "Look at Gigafactory capacity utilization and the ramp trajectory for Austin and Berlin factories",
+      "Examine energy generation and storage segment results separately from automotive \u2014 understanding the business mix matters for forward margin estimates",
+      "Review any guidance or management commentary on supply chain constraints, particularly battery cell availability"
+    ]
+  },
+  "FANG_2021-06-30": {
+    "flag": "Diamondback Energy's Q2 2021 10-Q registered a score of 99.31 \u2014 an extreme anomaly signal. Revenue growth hit the model ceiling while cash generation ran well ahead of earnings, both far above QQQ peer norms. No self-history score is available.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew 196% year-over-year \u2014 hitting the model ceiling. Oil prices recovered sharply from the April 2020 negative-price trough, and Diamondback's expanded production base from its late-2020 acquisition of QEP Resources added significant volumes. The combination of volume and price drove a dramatic top-line rebound.\n\n**OCF / Net Income:** Operating cash flow ran at approximately 5.1x net income \u2014 well above historical and peer norms. For an E&P company, a high OCF-to-net-income ratio is generally a positive signal: it suggests earnings are well-supported by cash, and the difference often reflects D&A charges that are non-cash but reduce reported net income.\n\n**Net Margin:** Net margin expanded to 18.5% \u2014 above historical norms and QQQ peers. The commodity price recovery and operating leverage on fixed-cost production drove margin expansion that, while expected in a recovery cycle, was extreme in magnitude relative to the peer group.",
+    "lookFor": [
+      "Review realized oil and gas prices versus the year-ago period and current strip to assess the sustainability of margins",
+      "Check D&A rates and depletion \u2014 a high OCF-to-net-income ratio for an E&P company is usually driven by heavy depletion charges, which is normal but worth confirming",
+      "Look at production volumes by basin and the contribution from the QEP acquisition to understand organic versus acquired growth",
+      "Examine the hedging book \u2014 the extent to which Diamondback hedged 2021 production will determine how much upside they captured from the commodity rally",
+      "Review capital allocation commentary \u2014 with strong cash flow, management may discuss accelerating buybacks, dividend increases, or debt reduction"
+    ]
+  },
+  "ALNY_2021-03-31": {
+    "flag": "Alnylam Pharmaceuticals' Q1 2021 10-Q registered a score of 99.23 \u2014 an extreme anomaly signal. Net margin was deeply negative and at the model ceiling, while revenue growth was also elevated above peer norms. No self-history score is available, so the comparison is peer-relative.",
+    "detected": "**Net Margin:** Net margin came in at -112.8% \u2014 far below both QQQ peers and the company's own historical norms, hitting the model ceiling for negative divergence. Alnylam is a commercial-stage biopharmaceutical company still investing heavily in R&D and commercialization, so negative margins are expected, but the depth of the loss signals an especially heavy spending period.\n\n**Revenue Growth (YoY):** Revenue grew 71% year-over-year \u2014 well above the peer norm. Commercial launches of rare disease therapies (likely ONPATTRO and GIVOSARI) were ramping, producing strong net product revenue growth. However, revenue is still small relative to the cost structure.\n\n**Asset Growth (YoY):** Total assets grew 43% year-over-year \u2014 a mild secondary signal. Asset expansion in a biopharma context often reflects cash raised from equity offerings, milestone payments received, or manufacturing investments.",
+    "lookFor": [
+      "Review the R&D expense line \u2014 this is almost certainly the primary driver of the deeply negative margin, and the filing will detail pipeline spending by program",
+      "Check net product revenue by drug (ONPATTRO, GIVOSARI, and any newly launched products) to understand the commercial ramp trajectory",
+      "Look at the cash runway disclosed in the liquidity section \u2014 how many quarters of operating cash burn does the company have covered?",
+      "Examine collaboration revenue from partners (Novartis, Sanofi, Regeneron) \u2014 milestone payments can be lumpy and material",
+      "Review any clinical trial readouts or regulatory submissions discussed in the filing that would signal when the pipeline could turn into revenue"
+    ]
+  },
+  "ALNY_2021-06-30": {
+    "flag": "Alnylam Pharmaceuticals' Q2 2021 10-Q registered a score of 99.15 \u2014 an extreme anomaly signal. Net margin remained at the model ceiling for negative divergence while accrual behavior was elevated. No self-history score is available, so the comparison is peer-relative.",
+    "detected": "**Net Margin:** Net margin came in at -85.9% \u2014 deeply negative and at the model ceiling for below-baseline divergence. The company's heavy R&D and SG&A investment continued to significantly outpace its growing but still modest product revenue base.\n\n**Revenue Growth (YoY):** Revenue grew 71% year-over-year \u2014 above QQQ peer norms. Commercial therapy revenue continued to ramp, but the growth rate, while strong, was not unusual enough to be the primary driver of the flag.\n\n**Accrual Ratio:** The accrual ratio was mildly elevated above norms. In a biopharmaceutical context, a higher accrual ratio can reflect timing differences in recognizing collaboration revenue, milestone payments, or deferred revenue on partnership agreements \u2014 worth examining but not necessarily alarming.",
+    "lookFor": [
+      "Check whether the elevated accrual ratio is tied to collaboration revenue recognition timing \u2014 review deferred revenue on the balance sheet",
+      "Review the R&D expense breakdown to understand which pipeline programs are consuming the most capital",
+      "Look at net product revenue trends quarter-over-quarter to assess whether the commercial ramp is on track",
+      "Examine management's operating expense guidance \u2014 is the spending trajectory expected to moderate as clinical programs complete?",
+      "Review accounts receivable and gross-to-net revenue deductions (rebates, chargebacks) to understand the quality of product revenue recognition"
+    ]
+  },
+  "APP_2021-03-31": {
+    "flag": "AppLovin's Q1 2021 10-Q registered a score of 99.07 \u2014 an extreme anomaly signal. Asset growth hit the model ceiling and revenue growth was also extreme, while net income fell sharply year-over-year. The divergence is strongest relative to QQQ peers, with no self-history score available.",
+    "detected": "**Asset Growth (YoY):** Total assets grew 86% year-over-year \u2014 hitting the model ceiling. This level of asset expansion in a single year almost always reflects an acquisition. AppLovin completed the acquisition of Adjust (attribution analytics) in early 2021, and prior acquisitions were also consolidating onto the balance sheet.\n\n**Revenue Growth (YoY):** Revenue grew 32% year-over-year \u2014 well above QQQ peer norms. The mobile gaming and ad-tech markets were expanding rapidly, and AppLovin's portfolio of acquired game studios and its software platform were both contributing to top-line growth.\n\n**Net Income Growth (YoY):** Net income fell approximately 226% year-over-year \u2014 swinging from a profit to a loss. Acquisition costs, integration expenses, and the amortization of acquired intangibles from M&A activity would suppress reported earnings even as the business grew revenues.",
+    "lookFor": [
+      "Identify all acquisitions completed in the past 12 months and their contribution to the asset balance sheet \u2014 look for goodwill and intangibles detail",
+      "Check the income statement for amortization of acquired intangibles, which directly suppresses reported net income from M&A activity",
+      "Review the Software Platform segment separately from the Apps segment \u2014 the two business units have very different margin profiles",
+      "Look at Adjusted EBITDA disclosures \u2014 management will likely highlight non-GAAP metrics that add back acquisition-related charges",
+      "Examine whether the net loss reflects genuine cash outflows or is primarily a non-cash accounting charge from purchase price allocation"
+    ]
+  },
+  "STX_2023-09-29": {
+    "flag": "Seagate Technology's fiscal Q1 2024 10-Q (period ending September 29, 2023) registered a score of 99.0 \u2014 an extreme anomaly signal. Revenue fell sharply while the balance sheet showed significantly elevated debt and compressed equity. The divergence is strongest relative to the company's own history.",
+    "detected": "**Revenue Growth (YoY):** Revenue fell 37% year-over-year \u2014 far below both the company's historical norms and QQQ peers. The HDD storage market entered a severe downcycle in 2022\u20132023, driven by inventory correction at cloud hyperscalers and a collapse in PC demand following the pandemic pull-forward. This was an industry-wide correction but Seagate was particularly exposed.\n\n**Equity / Assets:** The equity-to-assets ratio fell to approximately -24% \u2014 negative book equity, which is deeply below norms. Seagate had been aggressively repurchasing shares for years, and when the downcycle compressed earnings, accumulated buybacks left book equity in negative territory.\n\n**Debt / Assets:** Debt as a share of total assets reached approximately 124% \u2014 far above norms, a direct consequence of the negative equity position. With book equity negative, total liabilities exceed total assets, creating an elevated and unusual leverage ratio.",
+    "lookFor": [
+      "Review the revenue decline by segment and customer type \u2014 cloud (hyperscaler) versus nearline versus consumer HDD demand each has different recovery dynamics",
+      "Examine the balance sheet equity position carefully \u2014 negative book equity is unusual and the filing should explain the capital allocation history behind it",
+      "Check inventory levels and write-downs \u2014 an inventory correction cycle often requires write-downs that further pressure both income and equity",
+      "Look at the debt maturity schedule and liquidity position \u2014 with elevated leverage in a downcycle, covenant compliance and refinancing risk are key concerns",
+      "Review management commentary on the HDD recovery timeline and hyperscaler demand signals for the next few quarters"
+    ]
+  },
+  "ALNY_2021-09-30": {
+    "flag": "Alnylam Pharmaceuticals' Q3 2021 10-Q registered a score of 98.92 \u2014 an extreme anomaly signal. Net margin remained at the model ceiling for negative divergence while accrual behavior was elevated. No self-history score is available, so the comparison is peer-relative.",
+    "detected": "**Net Margin:** Net margin came in at -109.0% \u2014 deeply negative and hitting the model ceiling for below-baseline divergence. Alnylam's heavy investment in R&D and commercialization continued to significantly outpace product revenues, producing an operating loss that is extreme even for a clinical-stage biopharma.\n\n**Accrual Ratio:** The accrual ratio was mildly elevated \u2014 slightly above peer norms. This could reflect the timing of milestone payments, collaboration revenue recognition, or working capital movements tied to the commercial launch ramp.\n\n**Revenue Growth (YoY):** Revenue grew 49% year-over-year \u2014 modestly above peer norms. Commercial therapy revenue continued to build, though the growth rate was slower than prior quarters, which could reflect natural post-launch maturation or market access dynamics.",
+    "lookFor": [
+      "Review R&D expense by program to understand whether the spending increase reflects a specific late-stage trial that will resolve in the near term",
+      "Check the accrual ratio context \u2014 compare deferred revenue, accounts receivable, and collaboration milestone schedules",
+      "Look at the ONPATTRO and GIVOSARI commercial revenue trends and management's commentary on market penetration",
+      "Examine the cash and investment balance relative to quarterly cash burn to assess how many quarters of runway remain",
+      "Review any clinical data readouts or regulatory milestones referenced in the filing that could change the spending trajectory"
+    ]
+  },
+  "MSTR_2021-03-31": {
+    "flag": "MicroStrategy's Q1 2021 10-Q registered a score of 98.84 \u2014 an extreme anomaly signal. Asset growth hit the model ceiling while net income and net margin both collapsed to the model floor. The divergence is strongest relative to QQQ peers, with no self-history score available.",
+    "detected": "**Asset Growth (YoY):** Total assets grew 87% year-over-year \u2014 hitting the model ceiling. MicroStrategy had been aggressively purchasing Bitcoin as a corporate treasury asset, dramatically expanding its balance sheet with a volatile, non-operating asset that no other QQQ constituent held at comparable scale.\n\n**Net Income Growth (YoY):** Net income fell approximately 16,746% year-over-year \u2014 hitting the model floor. The company swung from a profit to an enormous loss. Bitcoin price volatility, combined with impairment charges under GAAP accounting rules, created severe reported losses even when Bitcoin held its value above cost basis on an unrealized basis.\n\n**Net Margin:** Net margin came in at approximately -89.5% \u2014 hitting the model floor for deeply negative divergence. The GAAP treatment of Bitcoin required MicroStrategy to record impairment charges whenever price fell below purchase cost, creating enormous non-cash losses.",
+    "lookFor": [
+      "Review the Bitcoin holdings schedule in the filing \u2014 total coins held, average cost basis, and the cumulative impairment charges taken to date",
+      "Examine the impairment methodology \u2014 GAAP requires recognizing impairment when fair value falls below carrying value but does not allow upward revaluation, creating asymmetric accounting",
+      "Check whether the operating software business (MicroStrategy's legacy analytics segment) is generating positive earnings separate from Bitcoin effects",
+      "Look at the debt financing used to purchase Bitcoin \u2014 the filing should disclose the terms, interest rates, and maturity of any Bitcoin-backed or convertible notes",
+      "Note any liquidity risk disclosures tied to margin calls or covenant triggers if Bitcoin prices fall below specific thresholds"
+    ]
+  },
+  "ALNY_2022-03-31": {
+    "flag": "Alnylam Pharmaceuticals' Q1 2022 10-Q registered a score of 98.77 \u2014 an extreme anomaly signal. Net margin remained at the model ceiling for negative divergence, with debt slightly elevated and revenue growth modestly above norms. No self-history score is available, so the comparison is peer-relative.",
+    "detected": "**Net Margin:** Net margin came in at -112.7% \u2014 deeply negative and hitting the model ceiling for below-baseline divergence. Alnylam's cost structure continued to significantly outpace its product revenue base, consistent with its multi-year commercial launch and pipeline investment phase.\n\n**Debt / Assets:** Debt as a share of assets was modestly above peer norms at approximately 88.3%. For a commercial-stage biopharma with ongoing losses, elevated debt reflects either partnership financing arrangements or borrowings to fund operations pending revenue scale.\n\n**Revenue Growth (YoY):** Revenue grew approximately 20% year-over-year \u2014 a mild positive signal. Commercial product revenue continued to build, though at a slower rate than in earlier quarters, which may reflect natural post-launch maturation.",
+    "lookFor": [
+      "Review the revenue mix between net product revenue and collaboration revenue \u2014 collaboration milestones can be lumpy and affect comparability",
+      "Check the debt structure \u2014 Alnylam's borrowing facilities and any convertible notes should be disclosed with terms, covenants, and maturity",
+      "Look at operating expense growth rates in R&D and SG&A relative to revenue growth to understand when the company might approach breakeven",
+      "Examine management guidance on profitability timeline \u2014 is there a defined path to cash flow positive operations?",
+      "Review pipeline milestones in the filing \u2014 regulatory submissions, clinical data readouts, and partner approvals that could trigger cash milestone payments"
+    ]
+  },
+  "MSTR_2021-06-30": {
+    "flag": "MicroStrategy's Q2 2021 10-Q registered a score of 98.69 \u2014 an extreme anomaly signal. Asset growth hit the model ceiling while net income and net margin both collapsed to the model floor. The divergence is strongest relative to QQQ peers, with no self-history score available.",
+    "detected": "**Asset Growth (YoY):** Total assets grew 115% year-over-year \u2014 hitting the model ceiling. MicroStrategy continued accumulating Bitcoin aggressively, and the balance sheet expanded dramatically. By Q2 2021, Bitcoin was the dominant asset on the company's balance sheet, far exceeding the value of the operating software business.\n\n**Net Income Growth (YoY):** Net income fell approximately 8,938% year-over-year \u2014 hitting the model floor. Bitcoin price declined significantly from its April 2021 peak in Q2 2021, triggering large GAAP impairment charges. The resulting loss was enormous relative to any prior comparable period.\n\n**Net Margin:** Net margin came in at approximately -238.8% \u2014 deeply negative and hitting the model floor. The impairment charges on Bitcoin holdings caused reported losses to exceed total revenues by a wide margin, an accounting outcome that is unique to MicroStrategy's corporate structure.",
+    "lookFor": [
+      "Review the Bitcoin holdings detail \u2014 total coins, cost basis, and impairment charges taken in Q2 2021 when Bitcoin prices fell from their April peak",
+      "Check the operating software business results in isolation \u2014 revenue, margins, and cash generation from the legacy analytics segment independent of Bitcoin effects",
+      "Look at the convertible note and secured debt terms used to finance Bitcoin purchases \u2014 interest cost and refinancing risk are material",
+      "Examine management's framework for when they would sell Bitcoin versus hold through drawdowns",
+      "Note any going concern or liquidity risk language in the filing given the depth of the reported loss"
+    ]
+  },
+  "MSTR_2022-03-31": {
+    "flag": "MicroStrategy's Q1 2022 10-Q registered a score of 98.61 \u2014 an extreme anomaly signal. Net margin hit the model floor while assets expanded meaningfully. Cash generation ran below reported earnings. The divergence is strongest relative to QQQ peers, with no self-history score available.",
+    "detected": "**Net Margin:** Net margin came in at approximately -109.6% \u2014 hitting the model floor for deeply negative divergence. Bitcoin prices declined significantly in Q1 2022 from their late-2021 highs, triggering large impairment charges under GAAP. As in prior quarters, this is primarily an accounting effect rather than an operating cash loss.\n\n**Asset Growth (YoY):** Total assets grew approximately 49% year-over-year \u2014 above peer norms but not at the ceiling. Bitcoin continued to dominate the balance sheet, and the company had issued additional debt to fund purchases.\n\n**Accrual Ratio:** The accrual ratio was modestly below norms \u2014 a mildly positive earnings-quality signal. Cash generation was running slightly ahead of reported earnings (before Bitcoin effects), consistent with the software business generating real cash.",
+    "lookFor": [
+      "Review the Bitcoin impairment charge in the income statement \u2014 this is the primary driver of the deeply negative margin and is non-cash",
+      "Check whether the software business (analytics/BI platform) is generating positive operating income and cash flow independently of Bitcoin",
+      "Look at the debt stack \u2014 by Q1 2022, MicroStrategy had issued substantial convertible notes and secured debt; review terms, covenants, and maturity",
+      "Examine management's framework for responding to further Bitcoin price declines \u2014 are there margin call triggers or forced liquidation thresholds?",
+      "Review the liquidity section \u2014 what is the company's cash position and operating cash burn rate excluding Bitcoin transactions?"
+    ]
+  },
+  "EA_2021-12-31": {
+    "flag": "Electronic Arts' fiscal Q3 2022 10-Q (period ending December 31, 2021) registered a score of 98.54 \u2014 an extreme anomaly signal. Net margin collapsed while operating cash flow ran dramatically above reported net income. The divergence is strongest relative to QQQ peers, with no self-history score available.",
+    "detected": "**Net Margin:** Net margin came in at approximately 3.7% \u2014 far below EA's historical norms and QQQ peers, hitting the model ceiling for negative divergence. For a software company with typically high margins, this level of compression signals a significant one-time charge or cost event in the period.\n\n**OCF / Net Income:** Operating cash flow ran at approximately 22x reported net income \u2014 hitting the model ceiling for positive divergence. When OCF dramatically exceeds net income, it almost always means large non-cash charges are depressing reported earnings while actual cash generation remains strong. This is a positive earnings-quality signal when properly understood.\n\n**Net Income Growth (YoY):** Net income fell approximately 69% year-over-year \u2014 meaningfully below prior-year levels. The combination of high OCF and low net income strongly suggests a large non-cash charge (impairment, amortization, restructuring) hit the income statement this quarter.",
+    "lookFor": [
+      "Identify the specific non-cash charges in the income statement that explain the gap between 22x OCF-to-net-income and the low net margin \u2014 likely amortization of acquired intangibles, impairment, or deferred revenue recognition",
+      "Check whether any acquisition-related amortization spiked this quarter \u2014 EA completed the Glu Mobile acquisition in 2021 and Playdemic in late 2021",
+      "Review the deferred revenue balance and recognition schedule \u2014 EA's live services model creates large deferred revenue that flows into OCF but not immediately into net income",
+      "Look at restructuring or employee-related charges in the income statement",
+      "Compare GAAP net income to EA's non-GAAP net income disclosure to understand what management views as the normalized earnings level"
+    ]
+  },
+  "MELI_2022-03-31": {
+    "flag": "MercadoLibre's Q1 2022 10-Q registered a score of 98.46 \u2014 an extreme anomaly signal. Asset growth hit the model ceiling while operating cash flow collapsed far below reported net income, and revenue growth was also extreme. The divergence is strongest relative to QQQ peers, with no self-history score available.",
+    "detected": "**Asset Growth (YoY):** Total assets grew approximately 121% year-over-year \u2014 hitting the model ceiling. MercadoLibre's fintech business (Mercado Pago) requires significant balance sheet assets to fund its lending and payments operations. Rapid loan book growth, credit card receivables, and digital wallet balances all expand the consolidated balance sheet quickly.\n\n**OCF / Net Income:** Operating cash flow came in at approximately -3.6x net income \u2014 deeply negative relative to positive reported earnings. This is a significant earnings quality flag: the company reported positive net income but consumed substantially more cash than it generated from operations. This pattern warrants investigation into working capital movements and loan book expansion.\n\n**Revenue Growth (YoY):** Revenue grew approximately 63% year-over-year \u2014 well above QQQ peer norms. MercadoLibre's marketplace and fintech businesses were both growing rapidly in Latin American markets. Currency effects may also have amplified or dampened the reported USD figure.",
+    "lookFor": [
+      "Review the cash flow statement in detail \u2014 the negative OCF-to-net-income ratio likely reflects loan originations classified within operating activities, which can obscure the underlying business cash generation",
+      "Examine the Mercado Pago loan book growth \u2014 rapid lending expansion absorbs cash and inflates both assets and the apparent OCF deficit",
+      "Check foreign exchange effects on the revenue and asset figures \u2014 MercadoLibre reports in USD but operates in Brazil (BRL), Argentina (ARS), and Mexico (MXN), all of which had significant FX movements in early 2022",
+      "Look at the credit quality of the loan book \u2014 delinquency rates and provisions for credit losses are key risk metrics in a fast-growing fintech lending business",
+      "Review segment-level margins for e-commerce versus fintech to understand the business mix and where growth is being invested"
+    ]
+  },
+  "ALNY_2022-09-30": {
+    "flag": "Alnylam Pharmaceuticals' Q3 2022 10-Q registered a score of 98.38 \u2014 an extreme anomaly signal. Net margin remained deeply negative while net income fell sharply year-over-year and debt was elevated. The divergence is strongest relative to the company's own history.",
+    "detected": "**Net Margin:** Net margin came in at approximately -153.6% \u2014 deeply below historical norms, though slightly less extreme than prior quarters. The company's cost structure continues to significantly outpace its growing product revenues. The magnitude of the loss is still at the extreme end of its own historical range.\n\n**Net Income Growth (YoY):** Net income fell approximately 98% year-over-year \u2014 the company's losses deepened meaningfully compared to the same quarter in the prior year. This could reflect accelerating R&D spending, a one-time charge, or declining collaboration revenue in the comparative period.\n\n**Debt / Assets:** Debt as a share of assets was moderately above historical norms at approximately 102% \u2014 meaning debt exceeded total assets. This reflects cumulative losses eroding equity while debt financing remained in place, a leveraged position that is notable for a pre-profitability company.",
+    "lookFor": [
+      "Review whether the deepening net income decline year-over-year reflects higher R&D spending on specific late-stage programs or a one-time charge",
+      "Check the debt structure \u2014 with debt exceeding total assets, the filing should detail covenants, maturity schedule, and any refinancing activity",
+      "Look at net product revenue trends across approved therapies (ONPATTRO, GIVOSARI, AMVUTTRA) \u2014 AMVUTTRA launched in 2022 and its early commercial trajectory is key",
+      "Examine collaboration revenue from Novartis and other partners \u2014 milestone payments can swing quarterly results significantly",
+      "Review the cash runway disclosure \u2014 management should quantify operating cash burn and the number of quarters of liquidity available"
+    ]
+  },
+  "CEG_2023-06-30": {
+    "flag": "Constellation Energy's Q2 2023 10-Q registered a score of 98.3 \u2014 an extreme anomaly signal. Net income surged dramatically while revenue declined and net margin expanded sharply. The divergence is strongest relative to the company's own history.",
+    "detected": "**Net Income Growth (YoY):** Net income grew approximately 750% year-over-year \u2014 hitting the model ceiling. This dramatic earnings expansion in a single year is almost certainly driven by a significant one-time event: the Inflation Reduction Act's nuclear production tax credits, which became effective in 2022 and provided substantial recurring benefits to Constellation as the largest nuclear fleet operator in the US.\n\n**Revenue Growth (YoY):** Revenue fell approximately 0.3% year-over-year \u2014 slightly below peer norms. Despite surging earnings, revenue declined modestly, suggesting the earnings gain came from tax credits or below-the-line items rather than increased power sales revenue.\n\n**Net Margin:** Net margin reached 15.3% \u2014 well above both historical norms and QQQ peers. A utility-adjacent company achieving this margin profile, while revenues were essentially flat, points strongly to tax credit income or other non-operating items boosting reported profitability.",
+    "lookFor": [
+      "Identify the IRA nuclear production tax credit contribution to net income \u2014 this is likely the primary driver of the earnings surge and the filing should quantify it",
+      "Check whether the net income reflects ongoing recurring credits or a catch-up true-up for prior periods",
+      "Review operating cash flow versus net income \u2014 if OCF is well below the net income surge, the tax credits may be non-cash or deferred",
+      "Look at power purchase agreements and merchant revenue exposure \u2014 Constellation's contract mix determines how much benefit flows through from high power prices",
+      "Examine management commentary on the nuclear fleet's long-term contribution from IRA credits and how they're reflected in forward guidance"
+    ]
+  },
+  "FANG_2021-09-30": {
+    "flag": "Diamondback Energy's Q3 2021 10-Q registered a score of 98.23 \u2014 an extreme anomaly signal. Revenue growth, net margin, and net income growth all surged simultaneously and well above QQQ peer norms. No self-history score is available, so the comparison is peer-relative only.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew 65% year-over-year \u2014 well above QQQ peer norms. Oil prices continued their recovery through Q3 2021 and Diamondback's expanded production base from the QEP acquisition contributed volumes. The combination of price and volume drove strong revenue growth.\n\n**Net Margin:** Net margin reached 34.0% \u2014 materially above both historical norms and QQQ peers. High oil prices flowing through to realized revenues at a fixed-cost production base create powerful margin leverage. For E&P companies, margin expansion during commodity rallies can be extreme by cross-industry standards.\n\n**Net Income Growth (YoY):** Net income grew approximately 58% year-over-year \u2014 above peer norms. The earnings recovery reflected both higher revenues and operational leverage, with fixed drilling and production costs spread over a larger revenue base.",
+    "lookFor": [
+      "Review realized oil and natural gas prices versus the year-ago period and current strip \u2014 the sustainability of margins depends heavily on where commodity prices settle",
+      "Check the hedging book coverage \u2014 what percentage of production is hedged through the next 4\u20138 quarters and at what prices?",
+      "Look at the QEP acquisition integration \u2014 are the acquired assets performing in line with acquisition underwriting, and are synergies being realized?",
+      "Examine capital spending and the reinvestment rate \u2014 high free cash flow in a commodity rally often goes toward buybacks, dividends, or debt reduction",
+      "Review the Midland Basin and Delaware Basin asset performance separately to understand which basins are driving returns"
+    ]
+  },
+  "SHOP_2025-03-31": {
+    "flag": "Shopify's Q1 2025 10-Q registered a score of 98.15 \u2014 an extreme anomaly signal. Net margin compressed sharply while accrual behavior fell well below norms and net income declined year-over-year. No self-history score is available, so the comparison is peer-relative only.",
+    "detected": "**Net Margin:** Net margin came in at approximately -28.9% \u2014 far below peer norms and Shopify's recent historical trajectory. For a company that had been demonstrating improving profitability, a return to deeply negative margins signals a significant cost event or revenue miss in the quarter.\n\n**Accrual Ratio:** The accrual ratio was well below peer norms \u2014 a negative accrual ratio indicates that cash generation was running ahead of reported earnings. While this is typically a positive earnings-quality signal, in the context of a deeply negative net margin, it may reflect that cash outflows are actually less severe than the reported loss suggests.\n\n**Net Income Growth (YoY):** Net income fell approximately 50% year-over-year \u2014 the company's profitability deteriorated materially compared to the prior-year period. Revenue growth of approximately 27% was insufficient to offset whatever cost pressures or charges hit the income statement.",
+    "lookFor": [
+      "Identify the specific cost items driving the margin compression \u2014 look for charges related to the 2024 logistics business sale, restructuring, or accelerated investment in Shopify Payments and international expansion",
+      "Check whether the negative net income reflects a one-time charge (equity compensation, M&A, impairment) or a structural shift in the expense base",
+      "Review free cash flow versus net income \u2014 with a negative accrual ratio, cash generation may be healthier than the GAAP loss suggests",
+      "Look at Gross Merchandise Volume (GMV) growth versus revenue growth to understand take rate trends and whether payment revenue is diluting margins",
+      "Examine management commentary on operating expense trajectory \u2014 is this quarter's cost level a peak or a new run rate?"
+    ]
+  },
+  "MDLZ_2023-03-31": {
+    "flag": "Mondelez International's Q1 2023 10-Q registered a score of 98.07 \u2014 an extreme anomaly signal. Revenue growth was strong while the balance sheet showed significantly elevated debt and compressed equity relative to norms. The divergence is strongest relative to the company's own history.",
+    "detected": "**Revenue Growth (YoY):** Revenue grew approximately 18% year-over-year \u2014 well above historical norms and QQQ peers. For a large-cap consumer staples company, this growth rate is extreme. It almost certainly reflects significant pricing actions taken in response to high input cost inflation (cocoa, dairy, sugar, packaging), which Mondelez passed through to consumers at a rate that inflated revenue well above volume growth.\n\n**Equity / Assets:** The equity-to-assets ratio fell to approximately 38.8% \u2014 well below historical norms. Mondelez has pursued an aggressive shareholder return strategy via buybacks and dividends, which steadily erodes book equity. Acquisitions may also contribute goodwill and intangibles that expand assets without proportionally growing equity.\n\n**Debt / Assets:** Debt as a share of total assets reached approximately 61.2% \u2014 elevated relative to historical norms. The elevated debt is the mirror of compressed equity and reflects the financing of buybacks and acquisition activity over time.",
+    "lookFor": [
+      "Decompose the 18% revenue growth into price versus volume \u2014 for Mondelez, pricing drove most revenue growth in 2022\u20132023 as cocoa and other input costs spiked; volume may have been flat or negative",
+      "Check gross margin trends \u2014 if pricing outpaced input cost inflation, margins should have improved; if input costs ran ahead, margins would have compressed despite revenue growth",
+      "Review the debt maturity schedule and interest expense \u2014 elevated leverage at a time of higher interest rates increases refinancing risk",
+      "Look at share repurchase activity and its effect on the declining equity base",
+      "Examine management commentary on pricing power sustainability and elasticity \u2014 at what point does price increase lead to volume loss?"
+    ]
+  },
+  "ALNY_2022-06-30": {
+    "flag": "Alnylam Pharmaceuticals' Q2 2022 10-Q registered a score of 98.0 \u2014 an extreme anomaly signal. Net margin and assets both fell well below historical norms while debt was elevated. The divergence is strongest relative to the company's own history.",
+    "detected": "**Net Margin:** Net margin came in at approximately -123.4% \u2014 deeply negative and well below the company's own historical norms. The profitability profile is consistent with prior quarters: heavy R&D and commercialization investment significantly outpacing product revenues.\n\n**Asset Growth (YoY):** Total assets fell approximately 5% year-over-year \u2014 below historical norms. Asset contraction in a biopharma context can reflect cash being spent on operations (reducing cash and investment balances) without replacement from equity raises or new debt. This may signal the company is drawing down its cash reserves.\n\n**Debt / Assets:** Debt as a share of total assets was elevated at approximately 94.7% \u2014 well above historical norms. With assets declining and debt remaining in place, the debt-to-assets ratio rose mechanically. This is a leverage signal worth monitoring.",
+    "lookFor": [
+      "Review the cash and investment balance trend \u2014 if assets are declining because cash is being consumed, the filing should quantify the remaining runway",
+      "Check whether the asset decline reflects any divestitures, milestone payments to partners, or one-time uses of cash",
+      "Look at the debt structure \u2014 covenants, maturity dates, and any refinancing activity given the elevated leverage ratio",
+      "Review AMVUTTRA (vutrisiran) commercial launch trajectory \u2014 this therapy was approved in 2022 and its ramp is key to the profitability timeline",
+      "Examine collaboration agreements with Novartis and Regeneron for any milestone receivables that would rebuild the asset base"
+    ]
+  },
+  "ADBE_2024-03-01": {
+    "flag": "Adobe's fiscal Q1 2024 10-Q (period ending March 1, 2024) registered a score of 97.92 \u2014 an extreme anomaly signal. Net margin fell far below Adobe's own historical norms while assets contracted slightly. Only self-history comparison is available \u2014 no peer-relative score exists for this row.",
+    "detected": "**Net Margin:** Net margin came in at approximately 11.96% \u2014 well below Adobe's typically high historical margins and hitting the model ceiling for negative divergence relative to its own history. Adobe has historically produced net margins well above 20%, so a drop to 12% signals a significant cost event or charge in the quarter.\n\n**Asset Growth (YoY):** Total assets fell approximately 1.5% year-over-year \u2014 slightly below historical norms. Asset contraction is unusual for a growing software company and may reflect reduced cash balances after returning capital, reduced deferred commissions, or the absence of new acquisitions.\n\n**Accrual Ratio:** The accrual ratio was mildly elevated above historical norms \u2014 earnings were slightly less cash-backed than usual. For a subscription software company, accruals can reflect timing of deferred revenue recognition, prepaid subscriptions, or the working capital dynamics of a large enterprise contract mix.",
+    "lookFor": [
+      "Identify the specific charges that depressed net margin below 12% \u2014 Adobe's Q1 FY2024 followed the terminated Figma acquisition ($1 billion termination fee paid in Q4 FY2023), so check whether any acquisition-related costs lingered into Q1",
+      "Review income tax expense \u2014 Adobe's effective tax rate can vary significantly based on stock-based compensation deductions and geographic profit mix",
+      "Look at stock-based compensation expense \u2014 for a large software company, SBC as a percentage of revenue can be a meaningful driver of GAAP versus non-GAAP margin divergence",
+      "Check deferred revenue movements on the balance sheet \u2014 changes in subscription contract timing can affect both accruals and OCF",
+      "Examine management commentary on what drove the margin compression and whether Q1 margins are representative of the forward run rate"
+    ]
+  },
+  "GOOG_2025-09-30": {
+    "flag": "Alphabet's (GOOG) Q3 2025 10-Q registered a score of 97.8 \u2014 an extreme anomaly signal. Net margin expanded strongly while assets grew above historical norms and accrual behavior moved modestly below baseline. The divergence is present across both the company's own history and QQQ peers.",
+    "detected": "**Net Margin:** Net margin reached approximately 34.2% \u2014 well above both Alphabet's historical norms and QQQ peers. For a company of Alphabet's scale, this level of profitability expansion is unusual and signals either a step-change in operating efficiency, a reduction in major cost categories (such as headcount), or strong revenue mix shift toward higher-margin products.\n\n**Asset Growth (YoY):** Total assets grew approximately 25% year-over-year \u2014 above historical norms. This level of asset expansion at Alphabet's scale typically reflects significant capital expenditure on data center infrastructure (AI-driven compute buildout) or strategic acquisitions.\n\n**Accrual Ratio:** The accrual ratio was modestly below historical norms \u2014 a mild positive earnings-quality signal indicating cash generation was slightly ahead of reported earnings. For a company with strong reported margins, this adds confidence that profits are cash-backed.",
+    "lookFor": [
+      "Review the margin expansion drivers \u2014 Alphabet's 2023\u20132025 headcount reduction and cost discipline efforts should appear in the operating expense line items; confirm whether the margin improvement is structural or contains one-time benefits",
+      "Examine the CapEx schedule in detail \u2014 significant data center and AI infrastructure spending should appear here; this is critical for understanding whether asset growth signals productive investment or overcapacity build",
+      "Look at the revenue mix between Search, YouTube, Cloud, and Other Bets \u2014 Cloud gross margin expansion is a key driver of consolidated margin improvement",
+      "Check the effective tax rate and any non-recurring tax items that may have elevated reported net income",
+      "Review management commentary on AI-driven cost efficiency versus AI-driven revenue contribution \u2014 both narratives will be present and the balance matters for forward estimates"
+    ]
+  },
+  "GOOGL_2025-09-30": {
+    "flag": "Alphabet's (GOOGL) Q3 2025 10-Q registered a score of 97.8 \u2014 an extreme anomaly signal. This row is identical in underlying data to the GOOG ticker entry, as both share classes (GOOG and GOOGL) file under the same SEC entity. Net margin expanded strongly while assets grew above historical norms. The divergence is present across both the company's own history and QQQ peers.",
+    "detected": "**Net Margin:** Net margin reached approximately 34.2% \u2014 well above both Alphabet's historical norms and QQQ peers. The margin expansion reflects the same underlying business performance as the GOOG row: operating cost discipline, headcount reductions, and improving Cloud segment profitability driving consolidated margins to historically elevated levels.\n\n**Asset Growth (YoY):** Total assets grew approximately 25% year-over-year \u2014 above historical norms. As noted in the GOOG analysis, this reflects ongoing capital expenditure on AI infrastructure and data center capacity, which is a defining investment theme for Alphabet in 2024\u20132025.\n\n**Accrual Ratio:** The accrual ratio was modestly below historical norms \u2014 a mild positive quality signal confirming that the strong reported margins are broadly cash-backed.",
+    "lookFor": [
+      "Note that GOOG and GOOGL represent different share classes of the same legal entity (Alphabet Inc.) filing the same 10-Q \u2014 review the filing once and apply findings to both tickers",
+      "Review the operating expense breakdown \u2014 specifically R&D, SG&A, and cost of revenues as a percentage of total revenue to understand which cost lines drove margin expansion",
+      "Examine Google Cloud segment revenue and operating income \u2014 Cloud reaching sustained profitability is a structural positive for Alphabet's margin profile",
+      "Look at capital expenditure guidance for the next 12 months \u2014 management has signaled significant ongoing AI infrastructure investment that will affect future asset growth and free cash flow",
+      "Check share repurchase activity and its effect on diluted share count \u2014 Alphabet has been an aggressive repurchaser, which affects EPS even when net income is reported at the entity level"
+    ]
+  }
+}
