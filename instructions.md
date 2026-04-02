@@ -400,11 +400,13 @@ Coverage: QQQ constituents, 10-Q and 10-K filings
 | 14 | 14-competitive-analysis.md | Competitive Analysis | ⬜ Not started |
 | 15 | 15-design-for-agents.md | Design for Agents | ⬜ Not started |
 | 16 | 16-openclaw.md | OpenClaw | ⬜ Not started |
-| 17 | 17-shipping-safely.md | Shipping Safely | ⬜ Not started |
-| 18 | 18-github-and-cicd.md | GitHub and CI/CD | ⬜ Not started |
-| 19 | 19-publish-your-app.md | Publish Your App | ⬜ Not started |
-| 20 | 20-share-with-team.md | Share With Team | ⬜ Not started |
+| 18e | 18e-github-exercise.md | GitHub Exercise | ✅ Complete |
+| 19e | 19e-architecture-exercise.md | Architecture Exercise | ✅ Complete |
+| 20e | 20e-tests-and-linter-exercise.md | Tests and Linter Exercise | ✅ Complete |
+| 21e | 21e-code-review-exercise.md | Code Review Exercise | ✅ Complete |
+| 22e | 22e-publish-your-app-exercise.md | Publish Your App Exercise | ✅ Complete |
+| 23e | 23e-cicd-pipeline-exercise.md | CI/CD Pipeline Exercise | ✅ Complete |
 
-**Current lesson:** `10-analyze-your-data.md` — Analyze Your Data
+**Current lesson:** Course complete ✅
 
 > Claude: Update this table and the "Current lesson" line whenever a lesson is completed or the student moves on.
