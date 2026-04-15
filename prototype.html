@@ -6,60 +6,47 @@
   <title>RedInk — Financial Anomaly Detection</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/papaparse@5/papaparse.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, #root { height: 100%; }
+    html, body, #root { height: 100%; overflow: hidden; }
     body {
-      background: #ffffff;
+      background: #fff;
       color: #111827;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: #f9fafb; }
-    ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
-    .bar-fill { transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1); }
-    .row-hover { transition: background-color 0.1s ease; }
-    .btn-review { transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease; }
-    select { appearance: none; -webkit-appearance: none; cursor: pointer; }
-    a { text-decoration: none; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+    .panel-scroll { overflow-y: auto; height: 100%; }
+    .row-item { cursor: pointer; transition: background 0.1s; }
+    .row-item:hover { background: #f9fafb; }
+    .row-item.selected { background: #f5f3ff; }
+    .bar-fill { transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+    .section-fade { animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .modal-bg { animation: bgFade 0.15s ease; }
+    @keyframes bgFade { from { opacity: 0; } to { opacity: 1; } }
+    .modal-card { animation: cardIn 0.2s cubic-bezier(.34,1.2,.64,1); }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .eval-details { animation: slideDown 0.2s ease; overflow: hidden; }
+    @keyframes slideDown { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 300px; } }
+    input[type=text] { outline: none; }
+    input[type=text]:focus { border-color: #635bff !important; }
+    button { cursor: pointer; font-family: inherit; }
   </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useMemo, useRef } = React;
+const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const COMPANY_NAMES = {
-  WBD:   'Warner Bros. Discovery',
-  FANG:  'Diamondback Energy',
-  MAR:   'Marriott International',
-  ADP:   'Automatic Data Processing',
-  BKNG:  'Booking Holdings',
-  TSLA:  'Tesla',
-  ALNY:  'Alnylam Pharmaceuticals',
-  APP:   'AppLovin',
-  STX:   'Seagate Technology',
-  MSTR:  'MicroStrategy',
-  EA:    'Electronic Arts',
-  MELI:  'MercadoLibre',
-  CEG:   'Constellation Energy',
-  SHOP:  'Shopify',
-  MDLZ:  'Mondelez International',
-  ADBE:  'Adobe',
-  GOOG:  'Alphabet (Class C)',
-  GOOGL: 'Alphabet (Class A)',
-};
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const DRIVER_LABELS = {
   revenue_growth_yoy:    'Revenue Growth (YoY)',
@@ -70,1206 +57,1049 @@ const DRIVER_LABELS = {
   equity_to_assets:      'Equity / Assets',
   accrual_ratio:         'Accrual Ratio',
   ocf_to_net_income:     'OCF / Net Income',
+  ocf_to_assets:         'OCF / Assets',
+  equity_multiplier:     'Equity Multiplier',
 };
 
-const STORAGE_KEY = 'redink_reviews_v2';
-
-// ── Palette ──────────────────────────────────────────────────────────────────
-
-const C = {
-  accent:       '#635bff',
-  accentHover:  '#4f46e5',
-  accentBg:     '#ede9fe',
-  accentBorder: '#c4b5fd',
-
-  scoreRed:     '#dc2626',
-  scoreRedBg:   '#fef2f2',
-  scoreRedBdr:  '#fecaca',
-  scoreOrange:  '#c2410c',
-  scoreOrgBg:   '#fff7ed',
-  scoreOrgBdr:  '#fed7aa',
-  scoreYellow:  '#a16207',
-  scoreYelBg:   '#fefce8',
-  scoreYelBdr:  '#fef08a',
-
-  black:        '#111827',
-  gray700:      '#374151',
-  gray600:      '#4b5563',
-  gray500:      '#6b7280',
-  gray400:      '#9ca3af',
-  gray300:      '#d1d5db',
-  gray200:      '#e5e7eb',
-  gray100:      '#f3f4f6',
-  gray50:       '#f9fafb',
-  white:        '#ffffff',
-
-  negRed:       '#dc2626',  // negative financial values (convention)
-  reviewGoodBg:     '#f0fdf4',
-  reviewGoodBdr:    '#86efac',
-  reviewGoodText:   '#16a34a',
-  reviewAmberBg:    '#fffbeb',
-  reviewAmberBdr:   '#fcd34d',
-  reviewAmberText:  '#d97706',
-  reviewGrayBg:     '#f9fafb',
-  reviewGrayBdr:    '#d1d5db',
-  reviewGrayText:   '#6b7280',
+const TIER = {
+  ALERT: { fg: '#dc2626', bg: '#fef2f2', border: '#fecaca', dot: '#dc2626' },
+  FLAG:  { fg: '#c2410c', bg: '#fff7ed', border: '#fed7aa', dot: '#f97316' },
+  WATCH: { fg: '#a16207', bg: '#fefce8', border: '#fef08a', dot: '#eab308' },
 };
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// Investigation Brief — urgency chip colours + user-facing labels
+const URGENCY = {
+  CRITICAL:    { label: 'High concern',        fg: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  INVESTIGATE: { label: 'Worth investigating', fg: '#c2410c', bg: '#fff7ed', border: '#fed7aa' },
+  CONTEXTUAL:  { label: 'Context only',        fg: '#6b7280', bg: '#f9fafb', border: '#e5e7eb' },
+};
 
-function getCompanyName(t) { return COMPANY_NAMES[t] || t; }
+const STORAGE_KEY = 'redink_v1_reviews';
 
-function scoreStyle(score) {
-  if (score >= 95) return { text: C.scoreRed,    bg: C.scoreRedBg,  border: C.scoreRedBdr };
-  if (score >= 85) return { text: C.scoreOrange, bg: C.scoreOrgBg,  border: C.scoreOrgBdr };
-  return                   { text: C.scoreYellow, bg: C.scoreYelBg, border: C.scoreYelBdr };
-}
-
-function reviewKey(row) { return `${row.ticker}_${row.report_date}`; }
-
-function fmtPct(val) {
-  const n = parseFloat(val);
-  if (isNaN(n) || val === '' || val == null) return '—';
-  return (n * 100).toFixed(1) + '%';
-}
-
-function fmtZ(val) {
-  const n = parseFloat(val);
-  return isNaN(n) ? null : n;
-}
-
-function fmtYear(d) { return d ? d.slice(0, 4) : ''; }
-
-function fmtDate(d) {
-  if (!d) return '—';
-  const [y, m, day] = d.split('-');
-  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return `${mo[parseInt(m,10)-1]} ${day}, ${y}`;
-}
-
-function parseSummary(s) {
-  if (!s) return [];
-  return s.split(' | ').map(x => x.trim()).filter(Boolean);
-}
-
-function buildExplanation(row) {
-  const clauses = parseSummary(row.driver_summary).join('. ') + '.';
-  const score   = parseFloat(row.anomaly_score_0_100).toFixed(1);
-  const self    = fmtZ(row.self_history_score);
-  const peer    = fmtZ(row.peer_relative_score);
-  let cmp = '';
-  if (self !== null && peer !== null) {
-    cmp = self > peer
-      ? "The divergence is strongest relative to the company's own history."
-      : 'The divergence is strongest relative to QQQ peers.';
-  } else if (self === null && peer !== null) {
-    cmp = 'Scoring is based on peer comparison only (no self-history available).';
-  }
-  return `This quarter was flagged because ${clauses} The anomaly score of ${score} reflects divergence from both the company's own historical range and its QQQ peer group. ${cmp} Review the linked SEC filing for management commentary and financial statement detail.`;
-}
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getBand(abs) {
   if (abs >= 8) return 'MAX';
   if (abs >= 5) return 'Extreme';
   if (abs >= 3) return 'Strong';
   if (abs >= 2) return 'Meaningful';
-  if (abs >= 1) return 'Mild';
-  return '';
+  return 'Mild';
 }
 
-const DRIVER_TIP = "Deviation from company history & QQQ peers. Positive = above baseline; negative = below baseline. Larger absolute value = stronger contribution to anomaly flag.";
+function getJudgeLabel(score) {
+  if (score >= 4.5) return { label: 'High Confidence',     color: '#16a34a', bg: '#f0fdf4' };
+  if (score >= 3.5) return { label: 'Moderate Confidence', color: '#d97706', bg: '#fffbeb' };
+  return                    { label: 'Review Required',     color: '#dc2626', bg: '#fef2f2' };
+}
 
-// ── Section Label ─────────────────────────────────────────────────────────────
+// BigQuery JSON exports numeric columns as strings; coerce to numbers here
+const NUM_FIELDS = [
+  'conviction_score','anomaly_score_0_100',
+  'pillar_anomaly','pillar_earnings','pillar_transparency',
+  'top_driver_1_value','top_driver_2_value','top_driver_3_value',
+  'divergence_confidence','beneish_m_score',
+  'faithfulness_score','direction_accuracy_score','actionability_score','avg_judge_score',
+];
+const BOOL_FIELDS = ['anomaly_acknowledged','beneish_manipulation_flag','is_blow_up_case','direction_label_match'];
 
-function SectionLabel({ children, style: extra }) {
+function normalizeRow(r) {
+  const out = { ...r };
+  for (const k of NUM_FIELDS) {
+    if (out[k] != null && out[k] !== '') out[k] = parseFloat(out[k]);
+    else out[k] = null;
+  }
+  for (const k of BOOL_FIELDS) {
+    if (typeof out[k] === 'string') out[k] = out[k] === 'true';
+  }
+  return out;
+}
+
+function normalizeTrends(raw) {
+  const out = {};
+  for (const [ticker, rows] of Object.entries(raw || {})) {
+    out[ticker] = rows.map(r => ({
+      q: r.calendar_quarter,
+      score: r.conviction_score != null ? parseFloat(r.conviction_score) : null,
+      ocf_to_net_income:     r.z_ocf_to_net_income     != null ? parseFloat(r.z_ocf_to_net_income)     : null,
+      accrual_ratio:         r.z_accrual_ratio         != null ? parseFloat(r.z_accrual_ratio)         : null,
+      revenue_growth_yoy:    r.z_revenue_growth_yoy    != null ? parseFloat(r.z_revenue_growth_yoy)    : null,
+      net_margin:            r.z_net_margin            != null ? parseFloat(r.z_net_margin)            : null,
+      assets_growth_yoy:     r.z_assets_growth_yoy     != null ? parseFloat(r.z_assets_growth_yoy)     : null,
+      debt_to_assets:        r.z_debt_to_assets        != null ? parseFloat(r.z_debt_to_assets)        : null,
+    })).sort((a, b) => a.q.localeCompare(b.q));
+  }
+  return out;
+}
+
+function reviewKey(row) { return `${row.ticker}_${row.calendar_quarter}`; }
+
+function loadReviews() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
+}
+
+function saveReview(key, state, prev) {
+  const next = { ...prev, [key]: state };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  return next;
+}
+
+// ── Sparkline (SVG) ───────────────────────────────────────────────────────────
+
+function Sparkline({ data, valueKey = 'score', width = 340, height = 80, color = '#635bff', gradId = 'sg', yAxis = false, formatY = v => v.toFixed(1) }) {
+  if (!data || data.length < 2) return null;
+  const vals = data.map(d => d[valueKey]).filter(v => v != null);
+  if (vals.length < 2) return null;
+
+  const YW = yAxis ? 40 : 0; // y-axis gutter width
+  const chartW = width - YW;
+
+  const padding = (Math.max(...vals) - Math.min(...vals)) * 0.18 || 0.8;
+  const min = Math.min(...vals) - padding;
+  const max = Math.max(...vals) + padding;
+  const xStep = chartW / (vals.length - 1);
+  const yScale = v => height - ((v - min) / (max - min)) * height;
+  const pts = vals.map((v, i) => `${YW + i * xStep},${yScale(v)}`).join(' ');
+  const area = `M${YW},${yScale(vals[0])} ` +
+    vals.slice(1).map((v, i) => `L${YW + (i+1)*xStep},${yScale(v)}`).join(' ') +
+    ` L${YW + chartW},${height} L${YW},${height} Z`;
+
+  const hasZero = min < 0 && max > 0;
+  const zeroY = yScale(0);
+
+  // Y-axis ticks: top, middle, bottom
+  const ticks = [max - padding * 0.5, (min + max) / 2, min + padding * 0.5];
+
   return (
-    <div style={{
-      fontSize: 11,
-      fontWeight: 600,
-      letterSpacing: '0.08em',
-      textTransform: 'uppercase',
-      color: C.gray400,
-      marginBottom: 12,
-      ...extra,
+    <svg width={width} height={height} style={{ overflow: 'visible' }}>
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Y-axis labels + grid lines */}
+      {yAxis && ticks.map((tick, i) => {
+        const y = yScale(tick);
+        return (
+          <g key={i}>
+            <line x1={YW} y1={y} x2={YW + chartW} y2={y}
+              stroke="#f3f4f6" strokeWidth="1" />
+            <text x={YW - 6} y={y + 4} textAnchor="end"
+              fontSize="9" fill="#9ca3af" fontFamily="Inter, sans-serif">
+              {formatY(tick)}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Y-axis vertical rule */}
+      {yAxis && (
+        <line x1={YW} y1={0} x2={YW} y2={height} stroke="#f3f4f6" strokeWidth="1" />
+      )}
+
+      {/* Zero baseline */}
+      {hasZero && (
+        <line x1={YW} y1={zeroY} x2={YW + chartW} y2={zeroY}
+          stroke="#d1d5db" strokeWidth="1" strokeDasharray="4 3" />
+      )}
+      {hasZero && yAxis && (
+        <text x={YW - 6} y={zeroY + 4} textAnchor="end"
+          fontSize="9" fill="#9ca3af" fontFamily="Inter, sans-serif">0</text>
+      )}
+
+      <path d={area} fill={`url(#${gradId})`} />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      {vals.map((v, i) => (
+        <circle key={i} cx={YW + i * xStep} cy={yScale(v)}
+          r={i === vals.length - 1 ? 4 : 3}
+          fill={color} stroke="#fff" strokeWidth={i === vals.length - 1 ? 2 : 0} />
+      ))}
+    </svg>
+  );
+}
+
+// ── Shared modal shell ────────────────────────────────────────────────────────
+
+function ModalShell({ title, subtitle, onClose, children }) {
+  return (
+    <div className="modal-bg" onClick={onClose} style={{
+      position: 'fixed', inset: 0,
+      background: 'rgba(0,0,0,0.3)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 100,
     }}>
-      {children}
+      <div className="modal-card" onClick={e => e.stopPropagation()} style={{
+        background: '#fff', borderRadius: 16, width: 580,
+        maxWidth: '92vw', maxHeight: '85vh',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.14)',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{subtitle}</div>}
+          </div>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontSize: 18, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto' }}>{children}</div>
+      </div>
     </div>
   );
 }
 
-// ── Review Status Indicators ─────────────────────────────────────────────────
-
-const REVIEW_STATUS_MAP = {
-  good:         { label: 'Good',   bg: C.reviewGoodBg,  border: C.reviewGoodBdr,  text: C.reviewGoodText  },
-  needs_review: { label: 'Review', bg: C.reviewAmberBg, border: C.reviewAmberBdr, text: C.reviewAmberText },
-  skip:         { label: 'Skip',   bg: C.reviewGrayBg,  border: C.reviewGrayBdr,  text: C.reviewGrayText  },
-};
-
-function StatusDot({ status }) {
-  if (!status || status === 'unreviewed') {
-    return <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.gray300, display: 'inline-block', flexShrink: 0 }} />;
-  }
-  const s = REVIEW_STATUS_MAP[status];
-  const dot = { good: C.reviewGoodText, needs_review: C.reviewAmberText, skip: C.reviewGrayText };
-  return <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot[status], display: 'inline-block', flexShrink: 0 }} />;
-}
-
-function StatusPill({ status }) {
-  if (!status || status === 'unreviewed') return null;
-  const s = REVIEW_STATUS_MAP[status];
-  if (!s) return null;
+function TabBar({ tabs, active, onChange }) {
   return (
-    <span style={{
-      fontSize: 10, fontWeight: 500, padding: '1px 6px',
-      borderRadius: 4, border: `1px solid ${s.border}`,
-      background: s.bg, color: s.text, flexShrink: 0,
-      letterSpacing: '0.02em',
-    }}>
-      {s.label}
-    </span>
+    <div style={{ padding: '10px 16px 0', background: '#f9fafb', borderBottom: '1px solid #f3f4f6', display: 'flex', gap: 4, flexShrink: 0 }}>
+      {tabs.map(t => (
+        <button key={t.key} onClick={() => onChange(t.key)} style={{
+          padding: '6px 14px', fontSize: 12, fontWeight: 500,
+          border: 'none', borderRadius: 6, cursor: 'pointer',
+          background: active === t.key ? '#fff' : 'transparent',
+          color: active === t.key ? '#111827' : '#6b7280',
+          boxShadow: active === t.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+        }}>{t.label}</button>
+      ))}
+    </div>
   );
 }
 
-// ── Left Sidebar ─────────────────────────────────────────────────────────────
+function SparkPanel({ trend, valueKey, color, label, currentVal, gradId, isConviction = false }) {
+  if (!trend || trend.length < 2) {
+    return <div style={{ color: '#9ca3af', fontSize: 13, padding: '32px 0', textAlign: 'center' }}>No history available.</div>;
+  }
+  const vals = trend.map(d => d[valueKey]).filter(v => v != null);
+  const last = vals[vals.length - 1];
+  const first = vals[0];
+  const delta = last - first;
+  const isUp = delta >= 0;
 
-function Sidebar({ rows, allRows, selected, onSelect, reviewState, filters, onFilterChange }) {
-  const years = useMemo(() => {
-    return [...new Set(allRows.map(r => fmtYear(r.report_date)))].sort().reverse();
-  }, [allRows]);
+  // Format Y-axis labels appropriately
+  const fmtY = isConviction
+    ? v => v.toFixed(0)
+    : v => (v > 0 ? '+' : '') + v.toFixed(1);
 
   return (
+    <div style={{ padding: '24px 24px 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 18 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 4 }}>{label}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <span style={{ fontSize: 26, fontWeight: 700, color, letterSpacing: '-0.02em' }}>
+              {currentVal != null
+                ? (isConviction ? currentVal.toFixed(1) : (currentVal > 0 ? '+' : '') + currentVal.toFixed(2))
+                : (isConviction ? last.toFixed(1) : last.toFixed(2))}
+            </span>
+            <span style={{ fontSize: 12, color: isUp ? '#16a34a' : '#dc2626', fontWeight: 500 }}>
+              {isUp ? '▲' : '▼'} {Math.abs(delta).toFixed(isConviction ? 1 : 2)} vs {trend[0].q}
+            </span>
+          </div>
+        </div>
+        <div style={{ fontSize: 11, color: '#9ca3af' }}>{trend.length} quarters</div>
+      </div>
+      <Sparkline
+        data={trend} valueKey={valueKey}
+        width={524} height={100}
+        color={color} gradId={gradId}
+        yAxis={true} formatY={fmtY}
+      />
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingLeft: 40 }}>
+        {trend.map(d => (
+          <div key={d.q} style={{ fontSize: 10, color: '#9ca3af', textAlign: 'center', lineHeight: 1.3 }}>
+            {d.q.split('-')[1]}<br/><span style={{ opacity: 0.7 }}>{d.q.split('-')[0].slice(2)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Conviction Trend Modal ────────────────────────────────────────────────────
+
+function TrendModal({ row, trends, onClose }) {
+  const trend = (trends && trends[row.ticker]) || [];
+  return (
+    <ModalShell
+      title={`${row.ticker} — Conviction History`}
+      subtitle={`${row.company_name} · ${row.pattern_name}`}
+      onClose={onClose}
+    >
+      <SparkPanel
+        trend={trend}
+        valueKey="score"
+        color="#635bff"
+        label="Conviction Score Over Time"
+        currentVal={row.conviction_score}
+        gradId="conv-grad"
+        isConviction={true}
+      />
+      {trend.length > 1 && (
+        <div style={{ margin: '0 24px 24px', padding: 14, background: '#f9fafb', borderRadius: 10, fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>
+          Conviction rose from <strong style={{ color: '#111827' }}>{trend[0].score.toFixed(1)}</strong> ({trend[0].q}) to <strong style={{ color: '#635bff' }}>{row.conviction_score.toFixed(1)}</strong> ({row.calendar_quarter}) — an escalating signal over {trend.length} quarters.
+        </div>
+      )}
+    </ModalShell>
+  );
+}
+
+// ── Drivers History Modal ─────────────────────────────────────────────────────
+
+function DriversModal({ row, trends, onClose }) {
+  const trend = (trends && trends[row.ticker]) || [];
+
+  const drivers = [
+    { key: row.top_driver_1, val: row.top_driver_1_value },
+    { key: row.top_driver_2, val: row.top_driver_2_value },
+    { key: row.top_driver_3, val: row.top_driver_3_value },
+  ].filter(d => d.key);
+
+  const [activeTab, setActiveTab] = useState(drivers[0]?.key || '');
+
+  const driverColor = (val) => val < 0 ? '#dc2626' : '#f59e0b';
+
+  const tabs = drivers.map(d => ({
+    key: d.key,
+    label: DRIVER_LABELS[d.key] || d.key,
+  }));
+
+  const activeDriver = drivers.find(d => d.key === activeTab);
+
+  return (
+    <ModalShell
+      title={`${row.ticker} — Driver History`}
+      subtitle={`${row.company_name} · What triggered the flag, over time`}
+      onClose={onClose}
+    >
+      <TabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />
+      {activeDriver && (
+        <SparkPanel
+          trend={trend}
+          valueKey={activeTab}
+          color={driverColor(activeDriver.val)}
+          label={`${DRIVER_LABELS[activeTab] || activeTab} — z-score by quarter`}
+          currentVal={activeDriver.val}
+          gradId={`drv-grad-${activeTab}`}
+        />
+      )}
+      {activeDriver && (
+        <div style={{ margin: '0 24px 24px', padding: 14, background: '#f9fafb', borderRadius: 10, fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>
+          Current z-score of <strong style={{ color: driverColor(activeDriver.val) }}>{activeDriver.val > 0 ? '+' : ''}{activeDriver.val.toFixed(2)}</strong> — rated <strong style={{ color: '#111827' }}>{getBand(Math.abs(activeDriver.val))}</strong>.
+          {' '}A positive z-score means this metric is unusually high relative to the company's own history and QQQ peers; negative means unusually low.
+        </div>
+      )}
+    </ModalShell>
+  );
+}
+
+// ── Left Panel ────────────────────────────────────────────────────────────────
+
+// Conviction score interpretation for the hover popover
+function convictionContext(row) {
+  const s = row.conviction_score;
+  if (s >= 75) return { headline: 'Top-tier alert', detail: 'Elevated signal across all three scoring pillars — statistical, earnings quality, and narrative.' };
+  if (s >= 65) return { headline: 'High conviction',   detail: 'Strong multi-pillar signal. Warrants prompt analyst review of the SEC filing.' };
+  if (s >= 55) return { headline: 'Moderate signal',   detail: 'Flag-level conviction. One or two pillars driving the score — monitor for escalation.' };
+  if (s >= 40) return { headline: 'Watch-tier signal', detail: 'Early indicator. Below alert threshold but worth tracking across subsequent quarters.' };
+  return              { headline: 'Low conviction',    detail: 'Routine statistical variation. Not yet at review-pack threshold.' };
+}
+
+function ScorePopover({ row, style }) {
+  const t = TIER[row.conviction_tier] || TIER.WATCH;
+  const ctx = convictionContext(row);
+  const total = (row.pillar_anomaly || 0) + (row.pillar_earnings || 0) + (row.pillar_transparency || 0);
+  const pillars = [
+    { label: 'Statistical', val: row.pillar_anomaly,      color: '#635bff' },
+    { label: 'Earnings',    val: row.pillar_earnings,     color: '#f59e0b' },
+    { label: 'Narrative',   val: row.pillar_transparency, color: '#10b981' },
+  ];
+  return (
     <div style={{
-      width: 288,
-      flexShrink: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      background: C.gray50,
-      borderRight: `1px solid ${C.gray200}`,
+      position: 'fixed', zIndex: 60,
+      background: '#fff',
+      border: '1px solid #e5e7eb',
+      borderRadius: 12,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+      width: 230,
+      padding: '14px 16px',
+      pointerEvents: 'none',
+      ...style,
     }}>
-      {/* Nav item */}
-      <div style={{ padding: '8px 12px', borderBottom: `1px solid ${C.gray200}` }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '7px 10px',
-          borderRadius: 7,
-          background: C.accentBg,
-          border: `1px solid ${C.accentBorder}`,
-          cursor: 'default',
-        }}>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="M2 4h12M2 8h8M2 12h6" stroke={C.accent} strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-          <span style={{ fontSize: 13, fontWeight: 600, color: C.accent }}>Anomaly Flags</span>
-          <span style={{
-            marginLeft: 'auto', fontSize: 11, fontWeight: 600,
-            fontFamily: 'ui-monospace, monospace',
-            background: C.accent, color: C.white,
-            borderRadius: 10, padding: '1px 7px',
-          }}>
-            {rows.length}
-          </span>
+      {/* Score + tier */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: t.fg, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            {row.conviction_score.toFixed(0)}
+          </div>
+          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: t.fg, marginTop: 3 }}>{row.conviction_tier}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#111827' }}>{ctx.headline}</div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div style={{ padding: '10px 12px', borderBottom: `1px solid ${C.gray200}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <SelectInput
-          value={filters.year}
-          onChange={v => onFilterChange('year', v)}
-          placeholder="All Years"
-          options={years.map(y => ({ value: y, label: y }))}
-        />
-        <SelectInput
-          value={filters.score}
-          onChange={v => onFilterChange('score', v)}
-          placeholder="All Scores"
-          options={[
-            { value: '95', label: 'Score 95+' },
-            { value: '85', label: 'Score 85+' },
-            { value: '70', label: 'Score 70+' },
-          ]}
-        />
-        <SelectInput
-          value={filters.status}
-          onChange={v => onFilterChange('status', v)}
-          placeholder="All Reviews"
-          options={[
-            { value: 'unreviewed', label: 'Unreviewed' },
-            { value: 'reviewed',   label: 'Reviewed' },
-          ]}
-        />
+      {/* Interpretation */}
+      <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.55, marginBottom: 12 }}>
+        {ctx.detail}
       </div>
 
-      {/* List */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {rows.length === 0 && (
-          <div style={{ padding: '24px 16px', textAlign: 'center', color: C.gray400, fontSize: 13 }}>
-            No results match filters
-          </div>
-        )}
-        {rows.map(row => {
-          const status   = reviewState[reviewKey(row)];
-          const sc       = parseFloat(row.anomaly_score_0_100);
-          const ss       = scoreStyle(sc);
-          const isSel    = selected && reviewKey(selected) === reviewKey(row);
-          const drvLabel = DRIVER_LABELS[row.top_driver_1] || row.top_driver_1 || '';
+      {/* Pillar mini-bars */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {pillars.map(p => {
+          if (!p.val) return null;
+          const pct = Math.min(p.val / 40, 1) * 100;
           return (
-            <SidebarRow
-              key={reviewKey(row)}
-              row={row}
-              sc={sc}
-              ss={ss}
-              status={status}
-              isSel={isSel}
-              drvLabel={drvLabel}
-              onSelect={onSelect}
-            />
+            <div key={p.label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                <span style={{ fontSize: 10, color: '#9ca3af' }}>{p.label}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: '#374151', fontVariantNumeric: 'tabular-nums' }}>{p.val.toFixed(1)}</span>
+              </div>
+              <div style={{ height: 3, background: '#f3f4f6', borderRadius: 2 }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: p.color, borderRadius: 2 }} />
+              </div>
+            </div>
           );
         })}
       </div>
-    </div>
-  );
-}
 
-function SelectInput({ value, onChange, placeholder, options }) {
-  return (
-    <div style={{ position: 'relative' }}>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          width: '100%',
-          padding: '7px 28px 7px 10px',
-          fontSize: 12,
-          color: value ? C.black : C.gray400,
-          background: C.white,
-          border: `1px solid ${C.gray200}`,
-          borderRadius: 6,
-          outline: 'none',
-          fontFamily: 'inherit',
-        }}
-        onFocus={e => e.target.style.borderColor = C.accent}
-        onBlur={e => e.target.style.borderColor = C.gray200}
-      >
-        <option value="">{placeholder}</option>
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-      <span style={{
-        position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)',
-        pointerEvents: 'none', fontSize: 10, color: C.gray400,
-      }}>▾</span>
-    </div>
-  );
-}
-
-function SidebarRow({ row, sc, ss, status, isSel, drvLabel, onSelect }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <div
-      className="row-hover"
-      onClick={() => onSelect(row)}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        padding: '11px 12px 11px 14px',
-        borderBottom: `1px solid ${C.gray100}`,
-        cursor: 'pointer',
-        background: isSel ? C.white : hov ? C.white : 'transparent',
-        borderLeft: isSel ? `2px solid ${C.accent}` : '2px solid transparent',
-        paddingLeft: 12,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 3 }}>
-        <span style={{ fontWeight: 700, fontSize: 13, color: C.black, letterSpacing: '-0.01em', fontFamily: 'ui-monospace, monospace' }}>
-          {row.ticker}
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{
-            fontSize: 11, fontWeight: 600,
-            fontFamily: 'ui-monospace, monospace',
-            color: ss.text, background: ss.bg,
-            border: `1px solid ${ss.border}`,
-            borderRadius: 4, padding: '1px 5px',
-          }}>
-            {sc.toFixed(1)}
-          </span>
-          <StatusDot status={status} />
-        </div>
-      </div>
-      <div style={{ fontSize: 12, color: C.gray500, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {getCompanyName(row.ticker)}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginTop: 3 }}>
-        <div style={{ fontSize: 11, color: C.gray400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
-          {fmtDate(row.report_date)} · {drvLabel}
-        </div>
-        {status && status !== 'unreviewed' && <StatusPill status={status} />}
-      </div>
-    </div>
-  );
-}
-
-// ── Driver Bar ────────────────────────────────────────────────────────────────
-
-function DriverBar({ name, value }) {
-  const z = parseFloat(value);
-  if (isNaN(z)) return null;
-  const label  = DRIVER_LABELS[name] || name;
-  const abs    = Math.abs(z);
-  const isNeg  = z < 0;
-  const isMax  = abs >= 8;
-  const pct    = isMax ? 100 : Math.min((abs / 8) * 100, 100);
-  const band   = getBand(abs);
-
-  // Positive = accent purple gradient, Negative = dark gray gradient
-  const barBg  = isNeg
-    ? 'linear-gradient(to right, #374151, #6b7280)'
-    : `linear-gradient(to right, ${C.accent}, #818cf8)`;
-  const valCol = isNeg ? C.gray700 : C.accent;
-
-  return (
-    <div title={DRIVER_TIP} style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
-        <span style={{ fontSize: 13, color: C.gray700, fontWeight: 500 }}>{label}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, fontFamily: 'ui-monospace, monospace', fontWeight: 600, color: valCol }}>
-            {isNeg ? '↓' : '↑'} {abs.toFixed(2)}
-          </span>
-          {band && (
-            <span style={{ fontSize: 10, color: C.gray400, fontWeight: 500, letterSpacing: '0.04em' }}>
-              {isMax && '● '}{band}
-            </span>
-          )}
-        </div>
-      </div>
-      <div style={{ width: '100%', background: C.gray100, borderRadius: 4, height: 5, overflow: 'hidden' }}>
-        <div
-          className="bar-fill"
-          style={{ height: '100%', width: `${pct}%`, background: barBg, borderRadius: 4 }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ── Trust Chip ────────────────────────────────────────────────────────────────
-
-function TrustChip({ children, ok }) {
-  const isErr = ok === false;
-  return (
-    <span style={{
-      fontSize: 11,
-      fontFamily: 'ui-monospace, monospace',
-      padding: '3px 8px',
-      borderRadius: 5,
-      border: `1px solid ${isErr ? C.scoreRedBdr : C.gray200}`,
-      color: isErr ? C.scoreRed : C.gray500,
-      background: isErr ? C.scoreRedBg : C.gray50,
-      fontWeight: 400,
-      letterSpacing: '0.01em',
-    }}>
-      {children}
-    </span>
-  );
-}
-
-// ── Metric Card ───────────────────────────────────────────────────────────────
-
-function MetricCard({ label, value }) {
-  const n = parseFloat(value);
-  const isNeg = !isNaN(n) && n < 0;
-  return (
-    <div style={{
-      border: `1px solid ${C.gray200}`,
-      borderRadius: 8,
-      padding: '12px 14px',
-      background: C.white,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-    }}>
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 8 }}>
-        {label}
-      </div>
+      {/* Caret pointer on left edge */}
       <div style={{
-        fontSize: 22,
-        fontWeight: 700,
-        fontFamily: 'ui-monospace, monospace',
-        color: isNeg ? C.negRed : C.black,
-        letterSpacing: '-0.02em',
-        lineHeight: 1,
-      }}>
-        {fmtPct(value)}
-      </div>
+        position: 'absolute', left: -7, top: '50%', transform: 'translateY(-50%)',
+        width: 12, height: 12, background: '#fff',
+        border: '1px solid #e5e7eb', borderRight: 'none', borderTop: 'none',
+        transform: 'translateY(-50%) rotate(45deg)',
+      }} />
     </div>
   );
 }
 
-// ── Detail Panel ──────────────────────────────────────────────────────────────
+function LeftPanel({ rows, selected, onSelect, reviews }) {
+  const [search, setSearch] = useState('');
+  const [year, setYear]       = useState('2025');
+  const [quarter, setQuarter] = useState('ALL');
+  const [tier, setTier]       = useState('ALERT');
+  const [hoverRow, setHoverRow] = useState(null);
+  const [hoverY, setHoverY] = useState(0);
 
-function DetailPanel({ row, reviewState, onReview, analysisData }) {
-  if (!row) {
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '100%', flexDirection: 'column', gap: 10,
-      }}>
-        <div style={{ fontSize: 13, color: C.gray400, letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600 }}>
-          Select an anomaly flag
-        </div>
-        <div style={{ fontSize: 12, color: C.gray300 }}>Choose a row from the list to view details</div>
-      </div>
-    );
-  }
-
-  const score      = parseFloat(row.anomaly_score_0_100);
-  const ss         = scoreStyle(score);
-  const selfZ      = fmtZ(row.self_history_score);
-  const peerZ      = fmtZ(row.peer_relative_score);
-  const combZ      = fmtZ(row.combined_signal_strength);
-  const hasFiling  = !!(row.filing_url && row.filing_url.trim());
-  const hasSelf    = selfZ !== null;
-  const status     = reviewState[reviewKey(row)];
-  const scoreLabel = score >= 95 ? 'EXTREME' : score >= 85 ? 'HIGH' : 'MODERATE';
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', background: C.white }}>
-
-      {/* Header */}
-      <div style={{ padding: '24px 28px 20px', borderBottom: `1px solid ${C.gray100}` }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-          {/* Ticker + company + dates */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4 }}>
-              <span style={{
-                fontSize: 30, fontWeight: 700, color: C.black,
-                letterSpacing: '-0.03em', fontFamily: 'ui-monospace, monospace',
-              }}>
-                {row.ticker}
-              </span>
-              <span style={{
-                fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
-                textTransform: 'uppercase', color: ss.text,
-                background: ss.bg, border: `1px solid ${ss.border}`,
-                borderRadius: 4, padding: '2px 6px',
-              }}>
-                {scoreLabel}
-              </span>
-            </div>
-            <div style={{ fontSize: 14, color: C.gray500, marginBottom: 8 }}>
-              {getCompanyName(row.ticker)}
-            </div>
-            <div style={{ fontSize: 12, color: C.gray400, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <span>Period ending <span style={{ color: C.gray600, fontWeight: 500 }}>{fmtDate(row.report_date)}</span></span>
-              <span>·</span>
-              <span>Filed <span style={{ color: C.gray600, fontWeight: 500 }}>{fmtDate(row.filing_date)}</span></span>
-            </div>
-          </div>
-          {/* Score */}
-          <div style={{ flexShrink: 0, textAlign: 'right', paddingTop: 2 }}>
-            <div style={{
-              fontSize: 44, fontWeight: 700,
-              fontFamily: 'ui-monospace, monospace',
-              color: ss.text, lineHeight: 1,
-              letterSpacing: '-0.03em',
-            }}>
-              {score.toFixed(1)}
-            </div>
-            <div style={{ fontSize: 10, color: C.gray400, letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 5, fontWeight: 600 }}>
-              Anomaly Score
-            </div>
-          </div>
-        </div>
-
-        {/* Sub-score triptych */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-          marginTop: 16,
-          border: `1px solid ${C.gray200}`,
-          borderRadius: 8,
-          overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-        }}>
-          {[
-            { label: 'Self History',  val: hasSelf ? selfZ.toFixed(2) : '—', sub: 'vs own history',   tooltip: 'How unusual this quarter is relative to this company\'s own filing history. Higher = more anomalous vs itself.' },
-            { label: 'Peer Relative', val: peerZ !== null ? peerZ.toFixed(2) : '—', sub: 'vs QQQ peers',      tooltip: 'How unusual this quarter is compared to other QQQ constituents in the same period. Higher = more anomalous vs peers.' },
-            { label: 'Combined',      val: combZ !== null ? combZ.toFixed(2) : '—', sub: 'composite signal',  tooltip: 'Composite of self-history and peer-relative signals. The primary basis for the anomaly score.' },
-          ].map((item, i) => (
-            <div key={item.label} title={item.tooltip} style={{ cursor: 'help',
-              padding: '12px 14px',
-              textAlign: 'center',
-              borderRight: i < 2 ? `1px solid ${C.gray200}` : 'none',
-              background: C.white,
-            }}>
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 6 }}>
-                {item.label}
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'ui-monospace, monospace', color: C.black, letterSpacing: '-0.02em' }}>
-                {item.val}
-              </div>
-              <div style={{ fontSize: 10, color: C.gray300, marginTop: 3 }}>{item.sub}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Drivers + Metrics — side by side */}
-      <div style={{ padding: '20px 28px', borderBottom: `1px solid ${C.gray100}`, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
-
-        {/* Left: Top Drivers */}
-        <div>
-          <SectionLabel>Top Drivers</SectionLabel>
-          <div style={{
-            fontSize: 11, color: C.gray400,
-            marginBottom: 16, paddingLeft: 10,
-            borderLeft: `2px solid ${C.gray200}`,
-            lineHeight: 1.6,
-          }}>
-            Deviation from company history &amp; QQQ peers.{' '}
-            <span style={{ color: C.accent, fontWeight: 500 }}>↑ above baseline</span>
-            {' · '}
-            <span style={{ color: C.gray600, fontWeight: 500 }}>↓ below baseline</span>
-            {' · Larger = stronger signal'}
-          </div>
-          <DriverBar name={row.top_driver_1} value={row.top_driver_1_value} />
-          <DriverBar name={row.top_driver_2} value={row.top_driver_2_value} />
-          <DriverBar name={row.top_driver_3} value={row.top_driver_3_value} />
-        </div>
-
-        {/* Right: Key Metrics */}
-        <div>
-          <SectionLabel>Key Metrics</SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <MetricCard label="Revenue Growth (YoY)" value={row.revenue_growth_yoy} />
-            <MetricCard label="Net Margin"            value={row.net_margin} />
-            <MetricCard label="Net Income Growth"     value={row.net_income_growth_yoy} />
-            <MetricCard label="OCF / Net Income"      value={row.ocf_to_net_income} />
-          </div>
-        </div>
-
-      </div>
-
-      {/* Analysis — full width */}
-      {(() => {
-        const ai = analysisData[reviewKey(row)];
-        if (ai) {
-          return (
-            <div style={{ padding: '20px 28px', borderBottom: `1px solid ${C.gray100}` }}>
-              <SectionLabel>Analysis</SectionLabel>
-
-              {/* The Flag */}
-              <p style={{ fontSize: 13, color: C.gray700, lineHeight: 1.75, margin: '0 0 16px' }}>
-                {ai.flag}
-              </p>
-
-              {/* What Was Detected */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.gray400, marginBottom: 8 }}>What Was Detected</div>
-                {ai.detected.split('\n\n').filter(Boolean).map((para, i) => {
-                  // Render **Label:** as bold
-                  const parts = para.split(/(\*\*[^*]+\*\*:?)/g);
-                  return (
-                    <p key={i} style={{ fontSize: 13, color: C.gray600, lineHeight: 1.75, margin: '0 0 10px' }}>
-                      {parts.map((part, j) =>
-                        part.startsWith('**') ? (
-                          <strong key={j} style={{ color: C.gray700, fontWeight: 600 }}>
-                            {part.replace(/\*\*/g, '')}
-                          </strong>
-                        ) : part
-                      )}
-                    </p>
-                  );
-                })}
-              </div>
-
-              {/* What to Look For */}
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.gray400, marginBottom: 8 }}>What to Look For</div>
-                <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                  {ai.lookFor.map((item, i) => (
-                    <li key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, color: C.gray600, lineHeight: 1.6, marginBottom: 6 }}>
-                      <span style={{ color: C.accent, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>→</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          );
-        }
-        // Fallback for rows without pre-generated analysis
-        return (
-          <div style={{ padding: '20px 28px', borderBottom: `1px solid ${C.gray100}` }}>
-            <SectionLabel>Analysis</SectionLabel>
-            <p style={{ fontSize: 13, color: C.gray500, lineHeight: 1.75, margin: 0 }}>
-              {buildExplanation(row)}
-            </p>
-          </div>
-        );
-      })()}
-
-      {/* Trust Chips */}
-      <div style={{ padding: '14px 28px', borderBottom: `1px solid ${C.gray100}` }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          <TrustChip>{row.num_features_used} features used</TrustChip>
-          <TrustChip>Model: brick3_q_v2</TrustChip>
-          <TrustChip ok={hasFiling}>Filing link {hasFiling ? '✓' : '✗'}</TrustChip>
-          <span title={hasSelf ? 'Score uses both the company\'s own history and QQQ peer comparison' : 'No historical filing data available for this company — score is based on peer comparison only'} style={{ cursor: 'help' }}>
-            <TrustChip>{hasSelf ? 'Self + Peer scoring' : 'Peer only'} <span style={{ color: '#9ca3af', fontSize: 10 }}>ⓘ</span></TrustChip>
-          </span>
-        </div>
-      </div>
-
-      {/* SEC Filing Button */}
-      <div style={{ padding: '16px 28px', borderBottom: `1px solid ${C.gray100}` }}>
-        {hasFiling ? (
-          <FilingButton href={row.filing_url} />
-        ) : (
-          <button disabled style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: '100%', border: `1px solid ${C.gray200}`,
-            background: C.gray50, color: C.gray400,
-            borderRadius: 8, padding: '11px 20px',
-            fontSize: 13, fontWeight: 600, cursor: 'not-allowed',
-            fontFamily: 'inherit',
-          }}>
-            SEC Filing Unavailable
-          </button>
-        )}
-      </div>
-
-      {/* Analyst Review */}
-      <div style={{ padding: '20px 28px' }}>
-        <SectionLabel>Analyst Review</SectionLabel>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {[
-            { key: 'good',         label: '✓ Good',         a: { bg: C.reviewGoodBg,  border: C.reviewGoodBdr,  text: C.reviewGoodText  } },
-            { key: 'needs_review', label: '⚠ Needs Review', a: { bg: C.reviewAmberBg, border: C.reviewAmberBdr, text: C.reviewAmberText } },
-            { key: 'skip',         label: '✗ Skip',          a: { bg: C.reviewGrayBg,  border: C.reviewGrayBdr,  text: C.reviewGrayText  } },
-          ].map(btn => (
-            <ReviewButton
-              key={btn.key}
-              btn={btn}
-              isActive={status === btn.key}
-              onClick={() => onReview(row, btn.key === status ? null : btn.key)}
-            />
-          ))}
-        </div>
-        {status && (
-          <div style={{ marginTop: 8, fontSize: 11, color: C.gray400 }}>
-            Marked as <span style={{ color: C.gray600, fontWeight: 500 }}>{status.replace('_', ' ')}</span> · click again to clear
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function FilingButton({ href }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 6, width: '100%',
-        background: hov ? C.accentHover : C.accent,
-        color: C.white,
-        border: `1px solid ${hov ? C.accentHover : C.accent}`,
-        borderRadius: 8, padding: '11px 20px',
-        fontSize: 13, fontWeight: 600,
-        letterSpacing: '0.01em',
-        cursor: 'pointer',
-        transition: 'background 0.15s ease, border-color 0.15s ease',
-      }}
-    >
-      View SEC Filing
-      <span style={{ fontSize: 14, lineHeight: 1 }}>→</span>
-    </a>
-  );
-}
-
-function ReviewButton({ btn, isActive, onClick }) {
-  const [hov, setHov] = useState(false);
-  const inactive = { bg: C.white, border: C.gray200, text: C.gray500 };
-  const s = isActive ? btn.a : (hov ? { ...inactive, border: btn.a.border, text: btn.a.text } : inactive);
-  return (
-    <button
-      className="btn-review"
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        flex: 1, fontSize: 12, fontWeight: 600,
-        padding: '9px 10px', borderRadius: 8,
-        border: `1px solid ${s.border}`,
-        background: s.bg, color: s.text,
-        cursor: 'pointer', fontFamily: 'inherit',
-      }}
-    >
-      {btn.label}
-    </button>
-  );
-}
-
-// ── Top Bar ───────────────────────────────────────────────────────────────────
-
-function TopBar({ filters, onFilterChange, allRows, reviewState }) {
-  const [focused, setFocused] = useState(false);
-  const totalReviewed = Object.keys(reviewState).length;
-  const pct = allRows.length > 0 ? Math.round((totalReviewed / allRows.length) * 100) : 0;
-
-  return (
-    <div style={{
-      flexShrink: 0,
-      height: 56,
-      borderBottom: `1px solid ${C.gray200}`,
-      background: C.white,
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0 20px',
-      gap: 16,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-    }}>
-      {/* Logo — aligns with sidebar width */}
-      <div style={{ width: 248, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ color: '#ef4444', fontSize: 13, lineHeight: 1 }}>●</span>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontWeight: 700, fontSize: 15, color: C.black, letterSpacing: '-0.02em' }}>RedInk</span>
-            <span style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: C.accent, background: C.accentBg,
-              border: `1px solid ${C.accentBorder}`,
-              borderRadius: 3, padding: '2px 5px',
-            }}>
-              BETA
-            </span>
-          </div>
-          <span style={{ fontSize: 10, color: C.gray400, letterSpacing: '0.01em' }}>
-            AI anomaly detection for QQQ filings
-          </span>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div style={{ flex: 1, maxWidth: 520, position: 'relative' }}>
-        <span style={{
-          position: 'absolute', left: 11, top: '50%',
-          transform: 'translateY(-50%)',
-          color: C.gray400, fontSize: 15, pointerEvents: 'none', lineHeight: 1,
-        }}>
-          ⌕
-        </span>
-        <input
-          type="text"
-          placeholder="Search ticker, company, or driver..."
-          value={filters.ticker}
-          onChange={e => onFilterChange('ticker', e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          style={{
-            width: '100%',
-            padding: '8px 12px 8px 34px',
-            fontSize: 13,
-            color: C.black,
-            background: focused ? C.white : C.gray50,
-            border: `1px solid ${focused ? C.accent : C.gray200}`,
-            borderRadius: 8,
-            outline: 'none',
-            boxShadow: focused ? `0 0 0 3px rgba(99,91,255,0.1)` : 'none',
-            transition: 'border-color 0.15s, box-shadow 0.15s, background 0.15s',
-            fontFamily: 'inherit',
-          }}
-        />
-      </div>
-
-      {/* Right stats */}
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{
-            width: 7, height: 7, borderRadius: '50%', display: 'inline-block',
-            background: pct >= 80 ? '#22c55e' : pct >= 40 ? '#f59e0b' : C.gray300,
-          }} />
-          <span style={{ fontSize: 12, color: C.gray500 }}>
-            <span style={{ fontWeight: 700, color: C.black, fontFamily: 'ui-monospace, monospace' }}>{totalReviewed}</span>
-            <span style={{ color: C.gray300 }}>/{allRows.length}</span>
-            <span style={{ marginLeft: 4 }}>reviewed</span>
-          </span>
-        </div>
-        <div style={{
-          fontSize: 11, fontWeight: 500, color: C.gray500,
-          background: C.gray50, border: `1px solid ${C.gray200}`,
-          borderRadius: 6, padding: '4px 10px',
-          fontFamily: 'ui-monospace, monospace',
-        }}>
-          brick3_q_v2
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Disclaimer ────────────────────────────────────────────────────────────────
-
-function Disclaimer() {
-  return (
-    <div style={{
-      flexShrink: 0,
-      background: '#fffbeb',
-      borderBottom: '1px solid #fde68a',
-      padding: '5px 20px',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-      fontSize: 11, color: '#92400e',
-    }}>
-      <span style={{ fontWeight: 700, letterSpacing: '0.04em' }}>⚠ EDUCATIONAL TOOL ONLY</span>
-      <span style={{ color: '#fcd34d' }}>·</span>
-      <span>Not investment or trading advice. For learning purposes only.</span>
-      <span style={{ color: '#fcd34d' }}>·</span>
-      <span style={{ fontStyle: 'italic', color: '#b45309' }}>AI is dope — it also hallucinates.</span>
-    </div>
-  );
-}
-
-// ── Insights Panel ────────────────────────────────────────────────────────────
-
-const DRIVER_LABELS_SHORT = {
-  revenue_growth_yoy:   'Revenue Growth',
-  assets_growth_yoy:    'Asset Growth',
-  net_income_growth_yoy:'Net Income Growth',
-  net_margin:           'Net Margin',
-  debt_to_assets:       'Debt/Assets',
-  equity_to_assets:     'Equity/Assets',
-  accrual_ratio:        'Accrual Ratio',
-  ocf_to_net_income:    'OCF/Net Income',
-};
-
-// Keyed by sorted pair for canonical lookup
-const PAIR_NOTES = {
-  'net_income_growth_yoy + revenue_growth_yoy': 'Both top and bottom line expanding together — typically organic growth or a strong cyclical recovery.',
-  'assets_growth_yoy + revenue_growth_yoy':     'Balance sheet expanding alongside revenue — common in M&A quarters or heavy capex cycles.',
-  'assets_growth_yoy + net_margin':             'Assets surging while profitability shifts — classic post-acquisition integration pattern.',
-  'accrual_ratio + net_margin':                 'Non-cash earnings with unusual margin — earnings quality concern, check if cash supports reported income.',
-  'equity_to_assets + net_margin':              'Book value and profitability moving together — often reflects write-downs or capital structure changes.',
-  'net_margin + ocf_to_net_income':             'Profitability and cash conversion both unusual — strong signal for earnings quality review.',
-};
-
-function InsightsStatCard({ label, value, sub, color }) {
-  return (
-    <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '16px 20px' }}>
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: color || C.black, fontFamily: 'ui-monospace, monospace', letterSpacing: '-0.02em' }}>{value}</div>
-      <div style={{ fontSize: 11, color: C.gray400, marginTop: 4 }}>{sub}</div>
-    </div>
-  );
-}
-
-function InsightsBar({ pct, color }) {
-  return (
-    <div style={{ flex: 1, height: 16, background: C.gray100, borderRadius: 4, overflow: 'hidden' }}>
-      <div style={{ height: '100%', width: `${Math.max(2, pct * 100)}%`, background: color, borderRadius: 4, transition: 'width 0.45s cubic-bezier(0.4,0,0.2,1)' }} />
-    </div>
-  );
-}
-
-function InsightsPanel({ insights }) {
-  if (!insights || !insights.total_rows) {
-    return (
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', color: C.gray400, fontSize:13 }}>
-        Loading insights...
-      </div>
-    );
-  }
-
-  const { score_distribution: sd, top_flagged_tickers, flags_by_year, top_drivers, top_driver_pairs = [], coverage, serial_flaggers } = insights;
-  const total      = insights.total_rows;
-  const signalRate = (((sd.extreme_95_plus + sd.high_85_94) / total) * 100).toFixed(1);
-  const maxTicker  = Math.max(...top_flagged_tickers.map(t => t.extreme_flags));
-  const maxDriver  = Math.max(...top_drivers.map(d => d.count));
-  const maxYear    = Math.max(...Object.values(flags_by_year).map(d => d.extreme + d.high));
-
-  return (
-    <div style={{ overflow: 'auto', height: '100%', padding: '24px 32px', background: C.gray50 }}>
-      {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 6 }}>Dataset Insights</div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: C.black }}>QQQ Filing Anomaly Patterns</div>
-        <div style={{ fontSize: 13, color: C.gray500, marginTop: 4 }}>Full dataset · {total.toLocaleString()} filings scored · 2021–2025</div>
-      </div>
-
-      {/* Headline stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
-        <InsightsStatCard label="Filings Scored"     value={total.toLocaleString()}              sub="QQQ 10-Q filings" />
-        <InsightsStatCard label="Extreme Flags"      value={sd.extreme_95_plus}                  sub={`${(sd.extreme_95_plus/total*100).toFixed(1)}% of total`} color="#dc2626" />
-        <InsightsStatCard label="Signal Rate"        value={`${signalRate}%`}                    sub="score ≥ 85 threshold" color="#c2410c" />
-        <InsightsStatCard label="Self + Peer Cover"  value={`${coverage.self_and_peer_pct}%`}    sub="have historical baseline" />
-      </div>
-
-      {/* Row 1: Year trend + Top tickers */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-
-        {/* Year trend */}
-        <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '20px 24px' }}>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 16 }}>Flags by Year</div>
-          {Object.entries(flags_by_year).sort().map(([year, d]) => (
-            <div key={year} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 36, fontSize: 12, fontWeight: 600, color: C.gray600, flexShrink: 0 }}>{year}</div>
-              <div style={{ flex: 1, position: 'relative', height: 20, background: C.gray100, borderRadius: 4, overflow: 'hidden' }}>
-                {/* Combined total (extreme + high) as base layer */}
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${((d.extreme + d.high) / maxYear) * 100}%`, background: '#fed7aa', borderRadius: 4 }} />
-                {/* Extreme-only overlay from left */}
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${(d.extreme / maxYear) * 100}%`, background: '#fca5a5', borderRadius: 4 }} />
-              </div>
-              <div style={{ width: 56, fontSize: 11, color: C.gray500, textAlign: 'right', flexShrink: 0 }}>
-                <span style={{ color: '#dc2626', fontWeight: 600 }}>{d.extreme}</span>
-                <span style={{ color: C.gray300 }}> + </span>
-                <span style={{ color: '#c2410c' }}>{d.high}</span>
-              </div>
-            </div>
-          ))}
-          <div style={{ marginTop: 12, display: 'flex', gap: 12, fontSize: 10, color: C.gray400 }}>
-            <span><span style={{ color: '#fca5a5' }}>■</span> Extreme (95+)</span>
-            <span><span style={{ color: '#fed7aa' }}>■</span> High (85–94)</span>
-          </div>
-        </div>
-
-        {/* Top tickers */}
-        <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '20px 24px' }}>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 16 }}>Most Flagged Tickers (Extreme)</div>
-          {top_flagged_tickers.slice(0, 8).map(t => (
-            <div key={t.ticker} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 44, fontSize: 12, fontWeight: 700, color: C.black, fontFamily: 'ui-monospace, monospace', flexShrink: 0 }}>{t.ticker}</div>
-              <InsightsBar pct={t.extreme_flags / maxTicker} color={C.accent} />
-              <div style={{ width: 16, fontSize: 12, fontWeight: 600, color: C.accent, textAlign: 'right', flexShrink: 0 }}>{t.extreme_flags}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Row 2: Top drivers + Driver pairs */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-
-        {/* Top drivers */}
-        <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '20px 24px' }}>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 4 }}>Top Anomaly Drivers</div>
-          <div style={{ fontSize: 11, color: C.gray400, marginBottom: 16 }}>Primary driver in extreme flags (95+)</div>
-          {top_drivers.map(d => (
-            <div key={d.driver} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 130, fontSize: 12, color: C.gray700, flexShrink: 0 }}>{DRIVER_LABELS_SHORT[d.driver] || d.driver}</div>
-              <InsightsBar pct={d.count / maxDriver} color="#f59e0b" />
-              <div style={{ width: 24, fontSize: 12, fontWeight: 600, color: C.gray700, textAlign: 'right', flexShrink: 0 }}>{d.count}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Driver pairs */}
-        <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '20px 24px' }}>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 4 }}>Top Driver Combinations</div>
-          <div style={{ fontSize: 11, color: C.gray400, marginBottom: 16 }}>Co-occurring driver pairs in extreme flags</div>
-          {top_driver_pairs.map((p, i) => {
-            const [a, b] = p.pair.split(' + ');
-            const noteKey = [a, b].sort().join(' + ');
-            const note = PAIR_NOTES[noteKey] || null;
-            return (
-              <div key={i} style={{ marginBottom: 8, padding: '10px 12px', background: C.gray50, borderRadius: 6, border: `1px solid ${C.gray100}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: note ? 5 : 0 }}>
-                  <div style={{ flex: 1, fontSize: 12, color: C.black }}>
-                    <span style={{ fontWeight: 500 }}>{DRIVER_LABELS_SHORT[a] || a}</span>
-                    <span style={{ color: C.gray300, margin: '0 5px' }}>+</span>
-                    <span style={{ fontWeight: 500 }}>{DRIVER_LABELS_SHORT[b] || b}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                    {p.peak_period && (
-                      <span style={{ fontSize: 10, color: C.gray400, fontFamily: 'ui-monospace, monospace' }}>
-                        peak {p.peak_period} ({p.peak_period_count}×)
-                      </span>
-                    )}
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>{p.count}×</div>
-                  </div>
-                </div>
-                {note && (
-                  <div style={{ fontSize: 11, color: C.gray500, lineHeight: 1.5 }}>{note}</div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Serial flaggers */}
-      {serial_flaggers && serial_flaggers.length > 0 && (
-        <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: '20px 24px', marginBottom: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.gray400, marginBottom: 4 }}>Serial Flaggers</div>
-          <div style={{ fontSize: 11, color: C.gray400, marginBottom: 16 }}>Tickers with 3+ extreme anomaly quarters — structurally unusual in the QQQ universe</div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {serial_flaggers.map(sf => (
-              <div key={sf.ticker} style={{ padding: '10px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: C.black, fontFamily: 'ui-monospace, monospace' }}>{sf.ticker}</span>
-                <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>{sf.count} extreme flags</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div style={{ fontSize: 11, color: C.gray400, textAlign: 'center', paddingTop: 8 }}>
-        Analysis based on {total.toLocaleString()} QQQ 10-Q filings · Model: brick3_q_v2 · Generated {insights.generated}
-      </div>
-    </div>
-  );
-}
-
-// ── App Root ──────────────────────────────────────────────────────────────────
-
-function App() {
-  const [allRows,      setAllRows]      = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [selected,     setSelected]     = useState(null);
-  const [analysisData, setAnalysisData] = useState({});
-  const [insightsData, setInsightsData] = useState(null);
-  const [view,         setView]         = useState('review'); // 'review' | 'insights'
-  const [reviewState, setReviewState] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
-    catch { return {}; }
-  });
-  const [filters, setFilters] = useState({ ticker: '', year: '', score: '', status: '' });
-
-  useEffect(() => {
-    // Load analysis narratives and CSV in parallel
-    const csvPromise = new Promise((resolve, reject) => {
-      Papa.parse('top_anomaly_review_pack.csv', {
-        download: true, header: true, skipEmptyLines: true,
-        complete: ({ data }) => resolve(data),
-        error: reject,
-      });
+  const years = useMemo(() => {
+    const s = new Set();
+    rows.forEach(r => {
+      const m = r.calendar_quarter && r.calendar_quarter.match(/^(\d{4})/);
+      if (m) s.add(m[1]);
     });
-    const analysisPromise = fetch('analysis.json').then(r => r.json()).catch(() => ({}));
-    const insightsPromise = fetch('insights.json').then(r => r.json()).catch(() => null);
+    return [...s].sort((a, b) => b.localeCompare(a));
+  }, [rows]);
 
-    Promise.all([csvPromise, analysisPromise, insightsPromise]).then(([data, analysis, insights]) => {
-      const sorted = [...data].sort((a, b) =>
-        parseFloat(b.anomaly_score_0_100) - parseFloat(a.anomaly_score_0_100)
-      );
-      const mostRecentYear = sorted.reduce((max, r) => {
-        const y = fmtYear(r.report_date);
-        return y > max ? y : max;
-      }, '');
-      setAllRows(sorted);
-      setAnalysisData(analysis);
-      setInsightsData(insights);
-      setFilters(f => ({ ...f, year: mostRecentYear }));
-      setSelected(sorted.find(r => fmtYear(r.report_date) === mostRecentYear) || sorted[0] || null);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
-
-  const filteredRows = useMemo(() => {
-    return allRows.filter(row => {
-      if (filters.ticker) {
-        const q = filters.ticker.toLowerCase();
-        const n = getCompanyName(row.ticker).toLowerCase();
-        if (!row.ticker.toLowerCase().includes(q) && !n.includes(q)) return false;
-      }
-      if (filters.year   && fmtYear(row.report_date) !== filters.year) return false;
-      if (filters.score  && parseFloat(row.anomaly_score_0_100) < parseFloat(filters.score)) return false;
-      if (filters.status === 'unreviewed' && reviewState[reviewKey(row)]) return false;
-      if (filters.status === 'reviewed'   && !reviewState[reviewKey(row)]) return false;
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return rows.filter(r => {
+      if (q && !(r.ticker.toLowerCase().includes(q) || (r.company_name || '').toLowerCase().includes(q))) return false;
+      if (tier !== 'ALL' && r.conviction_tier !== tier) return false;
+      const m = r.calendar_quarter && r.calendar_quarter.match(/^(\d{4})-Q(\d)/);
+      if (!m) return false;
+      if (year !== 'ALL' && m[1] !== year) return false;
+      if (quarter !== 'ALL' && `Q${m[2]}` !== quarter) return false;
       return true;
     });
-  }, [allRows, filters, reviewState]);
+  }, [rows, search, year, quarter, tier]);
 
-  function handleFilterChange(k, v) {
-    setFilters(f => ({ ...f, [k]: v }));
+  const grouped = useMemo(() => {
+    const g = { ALERT: [], FLAG: [], WATCH: [] };
+    filtered.forEach(r => { if (g[r.conviction_tier]) g[r.conviction_tier].push(r); });
+    return g;
+  }, [filtered]);
+
+  // Keep selection aligned with the filter — auto-select first filtered row if the current one falls off
+  useEffect(() => {
+    if (filtered.length === 0) { onSelect(null); return; }
+    const stillInList = selected && filtered.find(r => reviewKey(r) === reviewKey(selected));
+    if (!stillInList) onSelect(filtered[0]);
+  }, [filtered]);
+
+  const selectStyle = {
+    flex: 1, minWidth: 0, padding: '6px 8px',
+    border: '1px solid #e5e7eb', borderRadius: 6,
+    fontSize: 11, color: '#374151', background: '#f9fafb',
+    fontFamily: 'inherit', cursor: 'pointer',
+    appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
+    backgroundImage: 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'10\' viewBox=\'0 0 10 10\'><path d=\'M2 4 L5 7 L8 4\' stroke=\'%239ca3af\' stroke-width=\'1.3\' fill=\'none\' stroke-linecap=\'round\'/></svg>")',
+    backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
+    paddingRight: 22,
+  };
+
+  return (
+    <div style={{ width: 272, flexShrink: 0, borderRight: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+      {/* Header */}
+      <div style={{ padding: '18px 20px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626' }} />
+          <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em', color: '#111827' }}>RedInk</span>
+        </div>
+        <input
+          type="text"
+          placeholder="Search ticker or company…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            width: '100%', padding: '7px 12px',
+            border: '1px solid #e5e7eb', borderRadius: 8,
+            fontSize: 12, color: '#374151', background: '#f9fafb',
+            transition: 'border-color 0.15s',
+          }}
+        />
+        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+          <select value={year} onChange={e => setYear(e.target.value)} style={selectStyle}>
+            <option value="ALL">All yrs</option>
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <select value={quarter} onChange={e => setQuarter(e.target.value)} style={selectStyle}>
+            <option value="ALL">All Q</option>
+            <option value="Q1">Q1</option>
+            <option value="Q2">Q2</option>
+            <option value="Q3">Q3</option>
+            <option value="Q4">Q4</option>
+          </select>
+          <select value={tier} onChange={e => setTier(e.target.value)} style={selectStyle}>
+            <option value="ALL">All tiers</option>
+            <option value="ALERT">Alert</option>
+            <option value="FLAG">Flag</option>
+            <option value="WATCH">Watch</option>
+          </select>
+        </div>
+      </div>
+      {/* Grouped List */}
+      <div className="panel-scroll" style={{ flex: 1 }}>
+        {['ALERT', 'FLAG', 'WATCH'].map(tier => {
+          const tierRows = grouped[tier];
+          if (!tierRows || tierRows.length === 0) return null;
+          const t = TIER[tier];
+          return (
+            <div key={tier}>
+              <div style={{ padding: '10px 20px 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: t.dot }} />
+                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: t.dot }}>{tier}</span>
+                <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 2 }}>{tierRows.length}</span>
+              </div>
+              {tierRows.map(row => {
+                const key = reviewKey(row);
+                const rv = reviews[key];
+                const isSelected = selected && reviewKey(selected) === key;
+                return (
+                  <div
+                    key={key}
+                    className={`row-item${isSelected ? ' selected' : ''}`}
+                    onClick={() => onSelect(row)}
+                    style={{ padding: '10px 20px', borderBottom: '1px solid #f9fafb' }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{row.ticker}</span>
+                          {row.is_blow_up_case && <span style={{ fontSize: 10, color: '#d97706' }}>★</span>}
+                          {rv && (
+                            <span style={{
+                              fontSize: 9, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+                              color: rv === 'good' ? '#16a34a' : rv === 'review' ? '#d97706' : '#9ca3af',
+                              background: rv === 'good' ? '#f0fdf4' : rv === 'review' ? '#fffbeb' : '#f9fafb',
+                              padding: '1px 5px', borderRadius: 4,
+                            }}>
+                              {rv === 'good' ? 'Good' : rv === 'review' ? 'Review' : 'Skip'}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
+                          {row.company_name ? row.company_name.split(' ').slice(0, 2).join(' ') : row.ticker} · {row.calendar_quarter}
+                        </div>
+                        {row.divergence_label && (
+                          <div style={{
+                            marginTop: 5, display: 'inline-block',
+                            fontSize: 9, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
+                            color: row.divergence_label === 'CONTRADICTS' ? '#dc2626' : row.divergence_label === 'CORROBORATES' ? '#16a34a' : '#9ca3af',
+                            background: row.divergence_label === 'CONTRADICTS' ? '#fef2f2' : row.divergence_label === 'CORROBORATES' ? '#f0fdf4' : '#f9fafb',
+                            padding: '2px 6px', borderRadius: 4,
+                          }}>
+                            {row.divergence_label}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: t.fg }}>{row.conviction_score.toFixed(0)}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+        <div style={{ height: 24 }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Right Panel ───────────────────────────────────────────────────────────────
+
+function RightPanel({ row, trends, reviews, onReview }) {
+  const [showEval, setShowEval] = useState(false);
+  const [showTrend, setShowTrend] = useState(false);
+  const [showDriverTrend, setShowDriverTrend] = useState(false);
+
+  // Reset all popups when row changes
+  useEffect(() => { setShowEval(false); setShowTrend(false); setShowDriverTrend(false); }, [row]);
+
+  if (!row) {
+    return (
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#e5e7eb', margin: '0 auto 12px' }} />
+          <div style={{ fontSize: 14, color: '#9ca3af' }}>Select a filing to review</div>
+        </div>
+      </div>
+    );
   }
 
-  function handleReview(row, status) {
-    const k = reviewKey(row);
-    setReviewState(prev => {
-      const next = { ...prev };
-      if (status === null) delete next[k];
-      else next[k] = status;
+  const t = TIER[row.conviction_tier] || TIER.WATCH;
+  const rv = reviews[reviewKey(row)];
+  const judge = getJudgeLabel(row.avg_judge_score || 0);
+  const totalPillar = (row.pillar_anomaly || 0) + (row.pillar_earnings || 0) + (row.pillar_transparency || 0);
+
+  const drivers = [
+    { key: row.top_driver_1, val: row.top_driver_1_value },
+    { key: row.top_driver_2, val: row.top_driver_2_value },
+    { key: row.top_driver_3, val: row.top_driver_3_value },
+  ].filter(d => d.key && d.val != null);
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fff', overflow: 'hidden' }}>
+      {/* Top strip */}
+      <div style={{ padding: '20px 32px 16px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 22, fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>{row.ticker}</span>
+              <span style={{
+                fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: t.fg, background: t.bg, border: `1px solid ${t.border}`,
+                padding: '3px 9px', borderRadius: 20,
+              }}>{row.conviction_tier}</span>
+              {row.is_blow_up_case && (
+                <span title={row.case_notes || ''} style={{
+                  fontSize: 11, fontWeight: 600, color: '#d97706', background: '#fffbeb',
+                  border: '1px solid #fed7aa', padding: '3px 9px', borderRadius: 20, cursor: 'default',
+                }}>★ Confirmed Signal</span>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+              {row.company_name} · {row.gics_sector} · {row.calendar_quarter} · {row.form_type}
+            </div>
+          </div>
+          {/* AI Judge badge */}
+          <div
+            onClick={() => setShowEval(v => !v)}
+            style={{
+              fontSize: 11, fontWeight: 600, color: judge.color,
+              background: judge.bg, padding: '5px 12px', borderRadius: 20,
+              cursor: 'pointer', userSelect: 'none', flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}
+          >
+            <span>{judge.label}</span>
+            <span style={{ opacity: 0.5 }}>{showEval ? '▲' : '▾'}</span>
+          </div>
+        </div>
+
+        {/* Eval details (expandable) */}
+        {showEval && (
+          <div className="eval-details" style={{ marginTop: 14, padding: 16, background: '#f9fafb', borderRadius: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 12 }}>AI Quality Check</div>
+            {[
+              { label: 'Grounded in filing', score: row.faithfulness_score, rationale: 'All claims traceable to driver values and MD&A.' },
+              { label: 'Signal read',         score: row.direction_accuracy_score, rationale: row.direction_label_match ? `Correctly identified ${row.divergence_label}.` : `Label mismatch — verify manually.` },
+              { label: 'Next step clarity',   score: row.actionability_score, rationale: 'Recommended action names specific filing section.' },
+            ].map(item => (
+              <div key={item.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+                <div style={{ minWidth: 130, fontSize: 12, color: '#374151', fontWeight: 500, paddingTop: 1 }}>{item.label}</div>
+                <div style={{ display: 'flex', gap: 3, marginTop: 3 }}>
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: i <= item.score
+                        ? (item.score >= 4 ? '#16a34a' : item.score >= 3 ? '#d97706' : '#dc2626')
+                        : '#e5e7eb',
+                    }} />
+                  ))}
+                </div>
+                <div style={{ fontSize: 11, color: '#9ca3af', flex: 1 }}>{item.rationale}</div>
+              </div>
+            ))}
+            <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #e5e7eb', fontSize: 10, color: '#9ca3af' }}>
+              Evaluated by claude-sonnet-4-6 · 3 judges · v2 prompt · 2026-04-10
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Scrollable body */}
+      <div className="panel-scroll section-fade" style={{ flex: 1, padding: '0 32px 32px' }}>
+
+        {/* Section 1: The Anomaly */}
+        <div style={{ paddingTop: 28 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 14 }}>The Anomaly</div>
+
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: '#374151', maxWidth: 680 }}>
+            {row.explanation_brief}
+          </p>
+
+          {/* MD&A Citation */}
+          {row.cited_passage && (
+            <div style={{
+              marginTop: 18, padding: '14px 18px',
+              background: '#f9fafb', borderLeft: '3px solid #635bff', borderRadius: '0 8px 8px 0',
+              maxWidth: 640,
+            }}>
+              <p style={{ fontSize: 13, fontStyle: 'italic', color: '#6b7280', lineHeight: 1.6 }}>
+                "{row.cited_passage}"
+              </p>
+              <div style={{ marginTop: 8, fontSize: 11, color: '#9ca3af' }}>
+                — MD&A, {row.form_type} · {row.calendar_quarter}
+              </div>
+            </div>
+          )}
+
+          {/* Divergence verdict */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16 }}>
+            {row.divergence_label && (
+              <span style={{
+                fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: row.divergence_label === 'CONTRADICTS' ? '#dc2626' : row.divergence_label === 'CORROBORATES' ? '#16a34a' : '#6b7280',
+                background: row.divergence_label === 'CONTRADICTS' ? '#fef2f2' : row.divergence_label === 'CORROBORATES' ? '#f0fdf4' : '#f9fafb',
+                border: `1px solid ${row.divergence_label === 'CONTRADICTS' ? '#fecaca' : row.divergence_label === 'CORROBORATES' ? '#86efac' : '#e5e7eb'}`,
+                padding: '4px 10px', borderRadius: 6,
+              }}>{row.divergence_label}</span>
+            )}
+            {row.divergence_confidence != null && (
+              <span style={{ fontSize: 12, color: '#9ca3af' }}>{Math.round(row.divergence_confidence * 100)}% confidence</span>
+            )}
+            {row.anomaly_acknowledged === false && (
+              <span style={{ fontSize: 12, color: '#9ca3af' }}>· Not acknowledged by management</span>
+            )}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: '#f3f4f6', margin: '28px 0' }} />
+
+        {/* Section 2: What Triggered It */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9ca3af' }}>What Triggered It</div>
+            <button
+              onClick={() => setShowDriverTrend(true)}
+              style={{ fontSize: 12, color: '#635bff', background: 'none', border: 'none', fontWeight: 500, padding: 0, letterSpacing: '-0.01em', cursor: 'pointer' }}
+            >View history →</button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 520 }}>
+            {drivers.map((d, i) => {
+              const abs = Math.abs(d.val);
+              const isPos = d.val > 0;
+              const band = getBand(abs);
+              const barPct = Math.min(abs / 8, 1) * 100;
+              const barColor = isPos ? '#f59e0b' : '#dc2626';
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ minWidth: 26, fontSize: 14, color: isPos ? '#f59e0b' : '#dc2626', textAlign: 'center' }}>
+                    {isPos ? '↑' : '↓'}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+                      <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{DRIVER_LABELS[d.key] || d.key}</span>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: isPos ? '#d97706' : '#dc2626', fontVariantNumeric: 'tabular-nums' }}>
+                          {isPos ? '+' : ''}{d.val.toFixed(2)}
+                        </span>
+                        {band && <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{band}</span>}
+                      </div>
+                    </div>
+                    <div style={{ height: 3, background: '#f3f4f6', borderRadius: 2, overflow: 'hidden' }}>
+                      <div className="bar-fill" style={{ height: '100%', width: `${barPct}%`, background: barColor, borderRadius: 2 }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Pattern + Beneish */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
+            {row.pattern_name && (
+              <span style={{ fontSize: 11, color: '#6b7280', background: '#f9fafb', border: '1px solid #e5e7eb', padding: '4px 10px', borderRadius: 6 }}>
+                {row.pattern_name}
+              </span>
+            )}
+            {row.beneish_manipulation_flag && (
+              <span style={{ fontSize: 11, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', padding: '4px 10px', borderRadius: 6 }}>
+                ⚠ Beneish manipulation flag · M-score {row.beneish_m_score?.toFixed(1)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: '#f3f4f6', margin: '28px 0' }} />
+
+        {/* Section 3: Conviction */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9ca3af' }}>Conviction</div>
+            <button
+              onClick={() => setShowTrend(true)}
+              style={{ fontSize: 12, color: '#635bff', background: 'none', border: 'none', fontWeight: 500, padding: 0, letterSpacing: '-0.01em' }}
+            >
+              View history →
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20 }}>
+            <span style={{ fontSize: 36, fontWeight: 700, color: t.fg, letterSpacing: '-0.03em' }}>{row.conviction_score.toFixed(1)}</span>
+            <span style={{ fontSize: 14, color: '#9ca3af' }}>/ 100</span>
+          </div>
+
+          {/* Pillar bars */}
+          <div style={{ maxWidth: 460, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { label: 'Statistical Anomaly',      val: row.pillar_anomaly,      color: '#635bff', bg: '#ede9fe' },
+              { label: 'Earnings Quality (Beneish)', val: row.pillar_earnings,   color: '#f59e0b', bg: '#fef3c7' },
+              { label: 'Narrative Signal (MD&A)',   val: row.pillar_transparency, color: '#10b981', bg: '#d1fae5' },
+            ].map(p => {
+              if (p.val == null) return null;
+              const pct = Math.min(p.val / 40, 1) * 100;
+              return (
+                <div key={p.label}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontSize: 12, color: '#6b7280' }}>{p.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#374151', fontVariantNumeric: 'tabular-nums' }}>{p.val.toFixed(1)}</span>
+                  </div>
+                  <div style={{ height: 5, background: '#f3f4f6', borderRadius: 3, overflow: 'hidden' }}>
+                    <div className="bar-fill" style={{ height: '100%', width: `${pct}%`, background: p.color, borderRadius: 3 }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: '#f3f4f6', margin: '28px 0' }} />
+
+        {/* Section 4: Investigation Brief — descriptive, not prescriptive */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9ca3af' }}>
+              Investigation Brief
+            </div>
+            {row.urgency_tier && URGENCY[row.urgency_tier] && (
+              <span style={{
+                fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: URGENCY[row.urgency_tier].fg,
+                background: URGENCY[row.urgency_tier].bg,
+                border: `1px solid ${URGENCY[row.urgency_tier].border}`,
+                padding: '3px 9px', borderRadius: 20,
+              }}>{URGENCY[row.urgency_tier].label}</span>
+            )}
+          </div>
+
+          {row.investigation_path ? (
+            <>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: '#374151', maxWidth: 680 }}>
+                {row.investigation_path}
+              </p>
+
+              {row.key_question && (
+                <div style={{
+                  marginTop: 18, padding: '14px 18px',
+                  background: '#fff', borderLeft: '3px solid #635bff',
+                  maxWidth: 640,
+                }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#635bff', marginBottom: 6 }}>Key question</div>
+                  <p style={{ fontSize: 15, fontWeight: 500, color: '#111827', lineHeight: 1.55 }}>
+                    {row.key_question}
+                  </p>
+                </div>
+              )}
+
+              {row.persistence_test && (
+                <div style={{ marginTop: 18, maxWidth: 680 }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 6 }}>What would escalate this</div>
+                  <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6 }}>
+                    {row.persistence_test}
+                  </p>
+                </div>
+              )}
+
+              <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {row.priority_section && (
+                  <span
+                    title={row.filing_section_rationale || ''}
+                    style={{
+                      fontSize: 11, color: '#374151', background: '#f9fafb',
+                      border: '1px solid #e5e7eb', padding: '5px 12px', borderRadius: 6,
+                      display: 'inline-flex', alignItems: 'center', gap: 8,
+                      cursor: row.filing_section_rationale ? 'help' : 'default',
+                    }}
+                  >
+                    <span style={{ color: '#9ca3af', fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Start here</span>
+                    <span style={{ color: '#9ca3af' }}>→</span>
+                    <span style={{ fontWeight: 500 }}>{row.priority_section}</span>
+                  </span>
+                )}
+                {row.model_version && (
+                  <span style={{ fontSize: 10, color: '#9ca3af' }}>
+                    Generated by {row.model_version}
+                  </span>
+                )}
+              </div>
+            </>
+          ) : (
+            <p style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic' }}>
+              Investigation Brief not available for this filing.
+            </p>
+          )}
+        </div>
+
+        <div style={{ height: 40 }} />
+      </div>
+
+      {/* Bottom action bar */}
+      <div style={{ padding: '14px 32px', borderTop: '1px solid #f3f4f6', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Review buttons */}
+        {[
+          { key: 'good',   label: '✓ Good',        activeBg: '#f0fdf4', activeBdr: '#86efac', activeText: '#16a34a' },
+          { key: 'review', label: '⚠ Needs Review', activeBg: '#fffbeb', activeBdr: '#fcd34d', activeText: '#d97706' },
+          { key: 'skip',   label: '✗ Skip',         activeBg: '#f9fafb', activeBdr: '#d1d5db', activeText: '#6b7280' },
+        ].map(btn => {
+          const active = rv === btn.key;
+          return (
+            <button
+              key={btn.key}
+              onClick={() => onReview(row, btn.key)}
+              style={{
+                padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                border: `1px solid ${active ? btn.activeBdr : '#e5e7eb'}`,
+                background: active ? btn.activeBg : '#fff',
+                color: active ? btn.activeText : '#6b7280',
+                transition: 'all 0.12s',
+              }}
+            >{btn.label}</button>
+          );
+        })}
+
+        <div style={{ flex: 1 }} />
+
+        {/* Trust chips */}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['8 features', 'brick3_q_v2', row.filing_url ? 'Filing ✓' : 'Filing ✗'].map(chip => (
+            <span key={chip} style={{ fontSize: 10, color: '#9ca3af', background: '#f9fafb', border: '1px solid #f3f4f6', padding: '3px 8px', borderRadius: 5 }}>{chip}</span>
+          ))}
+        </div>
+
+        {/* SEC Filing */}
+        <a
+          href={row.filing_url || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: '8px 18px', borderRadius: 8,
+            background: row.filing_url ? '#635bff' : '#f3f4f6',
+            color: row.filing_url ? '#fff' : '#9ca3af',
+            fontSize: 12, fontWeight: 600, textDecoration: 'none',
+            letterSpacing: '-0.01em',
+            pointerEvents: row.filing_url ? 'auto' : 'none',
+          }}
+        >
+          Open SEC Filing →
+        </a>
+      </div>
+
+      {/* Conviction trend modal */}
+      {showTrend && <TrendModal row={row} trends={trends} onClose={() => setShowTrend(false)} />}
+      {/* Drivers history modal */}
+      {showDriverTrend && <DriversModal row={row} trends={trends} onClose={() => setShowDriverTrend(false)} />}
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+
+function App() {
+  const [rows, setRows] = useState(null);       // null = loading
+  const [trends, setTrends] = useState({});
+  const [loadError, setLoadError] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [reviews, setReviews] = useState(loadReviews);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('data/anomalies.json').then(r => r.ok ? r.json() : Promise.reject(new Error('anomalies.json ' + r.status))),
+      fetch('data/trends.json').then(r => r.ok ? r.json() : Promise.reject(new Error('trends.json ' + r.status))),
+    ])
+      .then(([rawRows, rawTrends]) => {
+        const normRows = rawRows.map(normalizeRow);
+        setRows(normRows);
+        setTrends(normalizeTrends(rawTrends));
+        setSelected(normRows[0] || null);
+      })
+      .catch(err => { setLoadError(err.message || String(err)); setRows([]); });
+  }, []);
+
+  const handleReview = useCallback((row, state) => {
+    const key = reviewKey(row);
+    setReviews(prev => {
+      const next = prev[key] === state ? { ...prev, [key]: undefined } : saveReview(key, state, prev);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
     });
+  }, []);
+
+  if (rows === null) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 28, height: 28, border: '3px solid #e5e7eb', borderTopColor: '#635bff', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 0.8s linear infinite' }} />
+          <div style={{ fontSize: 13, color: '#6b7280' }}>Loading anomalies from BigQuery snapshot…</div>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      </div>
+    );
   }
 
-  if (loading) {
+  if (loadError && rows.length === 0) {
     return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', color: C.gray400, fontSize: 14,
-      }}>
-        Loading anomaly data...
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <div style={{ textAlign: 'center', maxWidth: 420 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#dc2626', marginBottom: 8 }}>Could not load anomalies</div>
+          <div style={{ fontSize: 12, color: '#6b7280' }}>{loadError}</div>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 10 }}>Expected <code>data/anomalies.json</code> and <code>data/trends.json</code> served from the same origin.</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: C.white }}>
-      <Disclaimer />
-      <TopBar
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        allRows={allRows}
-        reviewState={reviewState}
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+      <LeftPanel
+        rows={rows}
+        selected={selected}
+        onSelect={setSelected}
+        reviews={reviews}
       />
-
-      {/* Tab nav */}
-      <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${C.gray200}`, background: C.white, paddingLeft: 20, flexShrink: 0 }}>
-        {[
-          { key: 'review',   label: 'Anomaly Review' },
-          { key: 'insights', label: 'Dataset Insights' },
-        ].map(tab => (
-          <button key={tab.key} onClick={() => setView(tab.key)} style={{
-            padding: '9px 16px',
-            fontSize: 13,
-            fontWeight: view === tab.key ? 600 : 400,
-            color: view === tab.key ? C.accent : C.gray500,
-            background: 'none',
-            border: 'none',
-            borderBottom: view === tab.key ? `2px solid ${C.accent}` : '2px solid transparent',
-            marginBottom: -1,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            transition: 'color 0.15s',
-          }}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {view === 'insights' ? (
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          <InsightsPanel insights={insightsData} />
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          <Sidebar
-            rows={filteredRows}
-            allRows={allRows}
-            selected={selected}
-            onSelect={setSelected}
-            reviewState={reviewState}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-          />
-          <div style={{ flex: 1, overflow: 'hidden', background: C.gray50 }}>
-            <DetailPanel
-              row={selected}
-              reviewState={reviewState}
-              onReview={handleReview}
-              analysisData={analysisData}
-            />
-          </div>
-        </div>
-      )}
+      <RightPanel
+        row={selected}
+        trends={trends}
+        reviews={reviews}
+        onReview={handleReview}
+      />
     </div>
   );
 }
