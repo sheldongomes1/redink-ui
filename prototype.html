@@ -569,6 +569,12 @@ function LeftPanel({ rows, selected, onSelect, reviews }) {
       </div>
       {/* Grouped List */}
       <div className="panel-scroll" style={{ flex: 1 }}>
+        {filtered.length === 0 && (
+          <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: '#6b7280', marginBottom: 4 }}>No filings match these filters</div>
+            <div style={{ fontSize: 11, color: '#9ca3af', lineHeight: 1.5 }}>Try a different year, quarter, or tier — or clear the search.</div>
+          </div>
+        )}
         {['ALERT', 'FLAG', 'WATCH'].map(tier => {
           const tierRows = grouped[tier];
           if (!tierRows || tierRows.length === 0) return null;
