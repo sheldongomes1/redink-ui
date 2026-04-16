@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { AnomalyListRow, AnomalyDetailRow, TrendRow } from '@/types/redink';
+import type { AnomalyListRow, AnomalyDetailRow, TrendRow, EvalRow } from '@/types/redink';
+
+// ── Types (local) ────────────────────────────────────────────────────────────
+
+type CalibrationTier = { conviction_tier: string; total: number; evaluated: number; mean_judge: number | null; direction_match_pct: number | null };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -69,6 +73,12 @@ function getBand(abs: number) {
   if (abs >= 3) return 'Strong';
   if (abs >= 2) return 'Meaningful';
   return 'Mild';
+}
+
+function getJudgeLabel(score: number) {
+  if (score >= 4.5) return { label: 'High Confidence',     color: '#16a34a', bg: '#f0fdf4' };
+  if (score >= 3.5) return { label: 'Moderate Confidence', color: '#d97706', bg: '#fffbeb' };
+  return                    { label: 'Review Required',     color: '#dc2626', bg: '#fef2f2' };
 }
 
 function reviewKey(r: { ticker: string; calendar_quarter: string }) {
@@ -516,9 +526,70 @@ function LeftPanel({ rows, selected, onSelect, reviews }: {
 
 // ── Right Panel ──────────────────────────────────────────────────────────────
 
-function RightPanel({ row, detailLoading, trends, fetchTrend, reviews, onReview }: {
+function CalibrationBadge({ calibration }: { calibration: CalibrationTier[] }) {
+  const alert = calibration.find(c => c.conviction_tier === 'ALERT');
+  if (!alert || !alert.evaluated) return null;
+  return (
+    <div title={`${alert.evaluated}/${alert.total} ALERT-tier explanations independently evaluated · mean ${alert.mean_judge}/5 · ${alert.direction_match_pct}% direction match`}
+      style={{
+        fontSize: 10, color: '#6b7280', background: '#f9fafb', border: '1px solid #f3f4f6',
+        padding: '4px 10px', borderRadius: 16, cursor: 'help',
+        display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+      }}>
+      <span style={{ color: '#16a34a' }}>●</span>
+      <span>Calibrated: {alert.evaluated}/{alert.total} ALERT · {alert.mean_judge}/5</span>
+    </div>
+  );
+}
+
+function EvalChipButton({ evalData, showDetail, onToggle }: { evalData: EvalRow | null; showDetail: boolean; onToggle: () => void }) {
+  if (!evalData || evalData.avg_judge_score == null) return null;
+  const judge = getJudgeLabel(evalData.avg_judge_score);
+  return (
+    <div onClick={onToggle} style={{
+      fontSize: 11, fontWeight: 600, color: judge.color, background: judge.bg,
+      padding: '5px 12px', borderRadius: 20, cursor: 'pointer', userSelect: 'none',
+      flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+    }}>
+      <span>{judge.label}</span>
+      <span style={{ opacity: 0.5 }}>{showDetail ? '▲' : '▾'}</span>
+    </div>
+  );
+}
+
+function EvalDetails({ evalData }: { evalData: EvalRow }) {
+  return (
+    <div className="eval-details" style={{ marginTop: 14, padding: 16, background: '#f9fafb', borderRadius: 10 }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 12 }}>AI Quality Check</div>
+      {[
+        { label: 'Grounded in filing', score: evalData.faithfulness_score, rationale: 'Claims traceable to driver values and MD&A.' },
+        { label: 'Signal read',        score: evalData.direction_accuracy_score, rationale: evalData.direction_label_match ? 'Direction correctly identified.' : 'Label mismatch — verify manually.' },
+        { label: 'Next step clarity',  score: evalData.actionability_score, rationale: 'Action names specific filing section.' },
+      ].map(item => (
+        <div key={item.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+          <div style={{ minWidth: 130, fontSize: 12, color: '#374151', fontWeight: 500, paddingTop: 1 }}>{item.label}</div>
+          <div style={{ display: 'flex', gap: 3, marginTop: 3 }}>
+            {[1,2,3,4,5].map(i => (
+              <div key={i} style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: (item.score != null && i <= item.score)
+                  ? (item.score >= 4 ? '#16a34a' : item.score >= 3 ? '#d97706' : '#dc2626')
+                  : '#e5e7eb',
+              }} />
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: '#9ca3af', flex: 1 }}>{item.rationale}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTrend, reviews, onReview }: {
   row: AnomalyDetailRow | null;
   detailLoading: boolean;
+  evalData: EvalRow | null;
+  calibration: CalibrationTier[];
   trends: Record<string, ChartTrend[]>;
   fetchTrend: (ticker: string) => void;
   reviews: Record<string, string>;
@@ -526,8 +597,9 @@ function RightPanel({ row, detailLoading, trends, fetchTrend, reviews, onReview 
 }) {
   const [showTrend, setShowTrend] = useState(false);
   const [showDriverTrend, setShowDriverTrend] = useState(false);
+  const [showEval, setShowEval] = useState(false);
 
-  useEffect(() => { setShowTrend(false); setShowDriverTrend(false); }, [row]);
+  useEffect(() => { setShowTrend(false); setShowDriverTrend(false); setShowEval(false); }, [row]);
 
   if (!row && !detailLoading) {
     return (
@@ -589,7 +661,12 @@ function RightPanel({ row, detailLoading, trends, fetchTrend, reviews, onReview 
               {row.company_name} · {row.gics_sector} · {row.calendar_quarter} · {row.form_type}
             </div>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <CalibrationBadge calibration={calibration} />
+            <EvalChipButton evalData={evalData} showDetail={showEval} onToggle={() => setShowEval(v => !v)} />
+          </div>
         </div>
+        {showEval && evalData && <EvalDetails evalData={evalData} />}
       </div>
 
       {/* Scrollable body */}
@@ -813,13 +890,15 @@ export default function App() {
   const [selected, setSelected] = useState<AnomalyListRow | null>(null);
   const [details, setDetails] = useState<Record<string, AnomalyDetailRow>>({});
   const [detailLoading, setDetailLoading] = useState(false);
+  const [evals, setEvals] = useState<Record<string, EvalRow | null>>({});
+  const [calibration, setCalibration] = useState<CalibrationTier[]>([]);
   const [trends, setTrends] = useState<Record<string, ChartTrend[]>>({});
   const [reviews, setReviews] = useState<Record<string, string>>({});
 
   // Hydrate localStorage reviews on client
   useEffect(() => { setReviews(loadReviews()); }, []);
 
-  // Load anomaly list once
+  // Load anomaly list + calibration stats once
   useEffect(() => {
     fetch('/api/anomalies')
       .then(r => r.ok ? r.json() : Promise.reject(new Error(`anomalies HTTP ${r.status}`)))
@@ -828,21 +907,35 @@ export default function App() {
         setRows(data);
       })
       .catch(err => { setLoadError(err.message || String(err)); setRows([]); });
+
+    fetch('/api/eval/calibration')
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('calibration failed')))
+      .then(payload => setCalibration(payload.data || []))
+      .catch(() => {});
   }, []);
 
-  // Lazy-load detail when selection changes
+  // Lazy-load detail + eval when selection changes
   useEffect(() => {
     if (!selected) return;
     const key = reviewKey(selected);
-    if (details[key]) return; // cached
-    setDetailLoading(true);
-    fetch(`/api/detail/${encodeURIComponent(selected.ticker)}/${encodeURIComponent(selected.calendar_quarter)}`)
-      .then(r => r.ok ? r.json() : Promise.reject(new Error(`detail HTTP ${r.status}`)))
-      .then(payload => {
-        if (payload.data) setDetails(prev => ({ ...prev, [key]: payload.data }));
-      })
-      .catch(err => console.error('detail fetch failed:', err))
-      .finally(() => setDetailLoading(false));
+
+    if (!details[key]) {
+      setDetailLoading(true);
+      fetch(`/api/detail/${encodeURIComponent(selected.ticker)}/${encodeURIComponent(selected.calendar_quarter)}`)
+        .then(r => r.ok ? r.json() : Promise.reject(new Error(`detail HTTP ${r.status}`)))
+        .then(payload => {
+          if (payload.data) setDetails(prev => ({ ...prev, [key]: payload.data }));
+        })
+        .catch(err => console.error('detail fetch failed:', err))
+        .finally(() => setDetailLoading(false));
+    }
+
+    if (evals[key] === undefined) {
+      fetch(`/api/eval/${encodeURIComponent(selected.ticker)}/${encodeURIComponent(selected.calendar_quarter)}`)
+        .then(r => r.ok ? r.json() : Promise.reject(new Error(`eval HTTP ${r.status}`)))
+        .then(payload => setEvals(prev => ({ ...prev, [key]: payload.data })))
+        .catch(() => setEvals(prev => ({ ...prev, [key]: null })));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
@@ -891,7 +984,9 @@ export default function App() {
     );
   }
 
-  const selectedDetail = selected ? details[reviewKey(selected)] || null : null;
+  const selectedKey = selected ? reviewKey(selected) : null;
+  const selectedDetail = selectedKey ? details[selectedKey] || null : null;
+  const selectedEval = selectedKey ? evals[selectedKey] ?? null : null;
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -899,6 +994,8 @@ export default function App() {
       <RightPanel
         row={selectedDetail}
         detailLoading={detailLoading}
+        evalData={selectedEval}
+        calibration={calibration}
         trends={trends}
         fetchTrend={fetchTrend}
         reviews={reviews}
