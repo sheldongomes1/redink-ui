@@ -3,4 +3,18 @@ node_modules/
 *.log
 .env*
 .firebaserc
+.firebase/
 coverage/
+.next/
+tsconfig.tsbuildinfo
+
+# Local dev / Claude Code tooling — not part of the app
+.claude/
+.agents/
+.mcp.json
+skills-lock.json
+
+# Debug screenshots saved to repo root during development
+/Screenshot *.png
+/--full-page
+/fullpage

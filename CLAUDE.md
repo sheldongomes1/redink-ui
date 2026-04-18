@@ -1,5 +1,12 @@
 # RedInk — Claude Memory File
 
+## Permissions
+
+- **Read:** Pre-approved for all files in this directory and subdirectories. No confirmation needed before reading any file.
+- **Write:** Always ask for confirmation before creating, editing, or deleting any file.
+
+---
+
 ## Course Integration — On Every Session Start
 At the start of every session in this project folder, do the following:
 1. Read `instructions.md` and find the **Course Progress** section to get the current lesson number and name.

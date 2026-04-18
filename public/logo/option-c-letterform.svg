@@ -1,0 +1,11 @@
+<svg width="420" height="140" viewBox="0 0 420 140" xmlns="http://www.w3.org/2000/svg">
+  <!-- Diacritical fork mark sitting above the wordmark, centered between Red and Ink -->
+  <g transform="translate(158, 28)">
+    <path d="M0 0 L14 -10" stroke="#1A1816" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.55"/>
+    <path d="M0 0 L14 10" stroke="#C04830" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="2.6" fill="#C04830"/>
+  </g>
+  <!-- "Red" in warm grey (the "story"), "Ink" in coral (the "numbers" / truth) -->
+  <text x="30" y="96" font-family="Georgia, 'Times New Roman', serif" font-size="56" font-weight="700" font-style="italic" fill="#6B6560" letter-spacing="-1.5">Red</text>
+  <text x="160" y="96" font-family="Georgia, 'Times New Roman', serif" font-size="56" font-weight="700" font-style="italic" fill="#C04830" letter-spacing="-1.5">Ink</text>
+</svg>

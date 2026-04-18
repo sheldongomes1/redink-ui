@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>RedInk — logo options</title>
+  <style>
+    :root {
+      --cream-top:   #fdfcfa;
+      --cream-bot:   #f5f0eb;
+      --border:      #EAE4DD;
+      --ink:         #1A1816;
+      --muted:       #6B6560;
+      --micro:       #8F8880;
+      --coral:       #C04830;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #f0ebe4; font-family: Inter, -apple-system, 'Segoe UI', sans-serif; color: var(--ink); }
+    .frame { max-width: 1240px; margin: 40px auto; padding: 0 24px; }
+    h1 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+    .sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+    .card {
+      background: radial-gradient(ellipse at center, var(--cream-top) 0%, var(--cream-bot) 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 40px 24px 28px;
+      display: flex; flex-direction: column; align-items: center; gap: 28px;
+      min-height: 420px;
+    }
+    .label {
+      align-self: flex-start;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--coral); padding: 3px 8px; background: #fff; border: 1px solid #F3E7E2;
+      border-radius: 6px;
+    }
+    .title { font-size: 15px; font-weight: 600; color: var(--ink); margin-top: 2px; }
+    .desc  { font-size: 12px; color: var(--muted); text-align: center; max-width: 320px; line-height: 1.5; }
+    .stage { display: flex; flex-direction: column; align-items: center; gap: 14px; flex: 1; justify-content: center; }
+    .tagline {
+      font-family: Georgia, 'Times New Roman', serif; font-style: italic;
+      font-size: 13px; color: var(--muted); letter-spacing: 0.02em;
+    }
+    .btn {
+      margin-top: 8px;
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 16px; background: #fff; border: 1px solid #D4CCC2;
+      border-radius: 10px; font-size: 13px; font-weight: 500; color: var(--ink);
+    }
+    .foot { font-size: 11px; color: var(--micro); text-align: center; }
+    .small-ctx { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    .small-ctx .favicon { width: 28px; height: 28px; border-radius: 6px; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
+    .small-ctx .favicon img { max-width: 22px; max-height: 22px; }
+    .small-ctx .cap { font-size: 11px; color: var(--micro); }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <h1>RedInk — logo options</h1>
+    <div class="sub">Each option rendered on the landing-page background. Sign-in button shown for size context. Favicon row at the bottom of each card previews the mark at 22px.</div>
+
+    <div class="grid">
+
+      <!-- OPTION A -->
+      <div class="card">
+        <div style="width:100%; display:flex; align-items:center; justify-content:space-between;">
+          <span class="label">Option A</span>
+          <span class="title">Integrated lockup (larger, single mark)</span>
+        </div>
+        <div class="stage">
+          <img src="/logo/redink-logo.svg" alt="RedInk" style="height: 130px;" />
+        </div>
+        <button class="btn"><span style="display:inline-block; width:16px; height:16px; border-radius:50%; background:#EA4335;"></span>Sign in with Google</button>
+        <div class="desc">No floating icon on top. Drops the stacked duplication; gives the existing lockup room to breathe.</div>
+        <div class="small-ctx">
+          <div class="favicon"><img src="/logo/redink-icon.svg" alt=""></div>
+          <span class="cap">Favicon — current icon at 22px</span>
+        </div>
+      </div>
+
+      <!-- OPTION B -->
+      <div class="card">
+        <div style="width:100%; display:flex; align-items:center; justify-content:space-between;">
+          <span class="label">Option B</span>
+          <span class="title">Typographic underline (fork is the line)</span>
+        </div>
+        <div class="stage">
+          <img src="/logo/option-b-underline.svg" alt="RedInk" style="height: 130px;" />
+        </div>
+        <button class="btn"><span style="display:inline-block; width:16px; height:16px; border-radius:50%; background:#EA4335;"></span>Sign in with Google</button>
+        <div class="desc">One confident wordmark underlined by a line that bifurcates at its right end. The divergence motif lives in the underline, not a separate icon.</div>
+        <div class="small-ctx">
+          <div class="favicon"><img src="/logo/option-d-monogram.svg" alt=""></div>
+          <span class="cap">Favicon would need Option D's monogram</span>
+        </div>
+      </div>
+
+      <!-- OPTION C -->
+      <div class="card">
+        <div style="width:100%; display:flex; align-items:center; justify-content:space-between;">
+          <span class="label">Option C</span>
+          <span class="title">Split letterform (two-tone wordmark)</span>
+        </div>
+        <div class="stage">
+          <img src="/logo/option-c-letterform.svg" alt="RedInk" style="height: 150px;" />
+        </div>
+        <button class="btn"><span style="display:inline-block; width:16px; height:16px; border-radius:50%; background:#EA4335;"></span>Sign in with Google</button>
+        <div class="desc">"Red" in warm grey (the narrative), "Ink" in coral (the truth). A small fork diacritical above marks the split. Most distinctive — story vs numbers lives inside the wordmark itself.</div>
+        <div class="small-ctx">
+          <div class="favicon"><img src="/logo/option-d-monogram.svg" alt=""></div>
+          <span class="cap">Pair with Option D monogram for small sizes</span>
+        </div>
+      </div>
+
+      <!-- OPTION D -->
+      <div class="card">
+        <div style="width:100%; display:flex; align-items:center; justify-content:space-between;">
+          <span class="label">Option D</span>
+          <span class="title">Fork-as-monogram (bolder, ownable mark)</span>
+        </div>
+        <div class="stage">
+          <img src="/logo/option-d-monogram.svg" alt="RedInk" style="width: 150px; height: 150px;" />
+          <div style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 28px; font-weight: 700; color: var(--ink); margin-top: 4px;">RedInk</div>
+          <div class="tagline">when the story stops matching the numbers</div>
+        </div>
+        <button class="btn"><span style="display:inline-block; width:16px; height:16px; border-radius:50%; background:#EA4335;"></span>Sign in with Google</button>
+        <div class="desc">Thicker strokes inside a cream circle. Works at any size including 22px favicon. Wordmark drops to a supporting role.</div>
+        <div class="small-ctx">
+          <div class="favicon"><img src="/logo/option-d-monogram.svg" alt=""></div>
+          <span class="cap">Favicon — monogram holds up at 22px</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
