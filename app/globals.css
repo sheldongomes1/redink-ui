@@ -15,6 +15,37 @@ body {
 ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
 
 .panel-scroll { overflow-y: auto; height: 100%; }
+
+/* Two-column detail layout: narrative on the left, summary rail on the right. */
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 40px;
+  padding-top: 28px;
+}
+.summary-rail {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.rail-card {
+  padding: 16px 18px;
+  background: #fafbfc;
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
+}
+.rail-card-title {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #9ca3af; margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+@media (max-width: 1180px) {
+  .detail-grid { grid-template-columns: 1fr; gap: 28px; }
+  .summary-rail { position: static; gap: 14px; }
+}
 .row-item { cursor: pointer; transition: background 0.1s; }
 .row-item:hover { background: #f9fafb; }
 .row-item.selected { background: #f5f3ff; }

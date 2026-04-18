@@ -76,6 +76,9 @@ const URGENCY = {
 
 const STORAGE_KEY = 'redink_v1_reviews';
 
+// API base URL — Cloud Run in production, localhost:8081 for dev
+const API_BASE = window.REDINK_API_BASE || 'https://redink-api-318757842222.us-central1.run.app';
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getBand(abs) {
@@ -1047,8 +1050,8 @@ function App() {
 
   useEffect(() => {
     Promise.all([
-      fetch('data/anomalies.json').then(r => r.ok ? r.json() : Promise.reject(new Error('anomalies.json ' + r.status))),
-      fetch('data/trends.json').then(r => r.ok ? r.json() : Promise.reject(new Error('trends.json ' + r.status))),
+      fetch(`${API_BASE}/api/anomalies`).then(r => r.ok ? r.json() : Promise.reject(new Error('anomalies ' + r.status))),
+      fetch(`${API_BASE}/api/trends`).then(r => r.ok ? r.json() : Promise.reject(new Error('trends ' + r.status))),
     ])
       .then(([rawRows, rawTrends]) => {
         const normRows = rawRows.map(normalizeRow);
@@ -1073,7 +1076,7 @@ function App() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ width: 28, height: 28, border: '3px solid #e5e7eb', borderTopColor: '#635bff', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 0.8s linear infinite' }} />
-          <div style={{ fontSize: 13, color: '#6b7280' }}>Loading anomalies from BigQuery snapshot…</div>
+          <div style={{ fontSize: 13, color: '#6b7280' }}>Loading anomalies from BigQuery…</div>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
@@ -1086,7 +1089,7 @@ function App() {
         <div style={{ textAlign: 'center', maxWidth: 420 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: '#dc2626', marginBottom: 8 }}>Could not load anomalies</div>
           <div style={{ fontSize: 12, color: '#6b7280' }}>{loadError}</div>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 10 }}>Expected <code>data/anomalies.json</code> and <code>data/trends.json</code> served from the same origin.</div>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 10 }}>Could not reach RedInk API at <code>{API_BASE}</code>. Ensure the API is running.</div>
         </div>
       </div>
     );

@@ -314,34 +314,37 @@ Claude Code should treat these as acceptance criteria, not aspirational goals.
 
 ## Version Roadmap — Build With This in Mind
 
-### v0 (tonight / this weekend)
+### v0 (complete ✅)
 - Load top_anomaly_review_pack.csv (30 rows)
 - Two-panel layout with list and detail
 - Driver bars, trust chips, explanation paragraph
 - SEC filing link
 - Review buttons with localStorage persistence
+- Dataset Insights tab with portfolio-level pattern analysis
 
-### v1 (next weekend)
-- Load full quarterly_scores.csv (1,354 rows)
-- Pagination or virtual scrolling on list panel
-- Export reviewed anomalies to CSV
-- Add self z-score vs peer z-score breakdown using quarterly_scores_detailed.csv
+### v1 (next)
+- Keep top_anomaly_review_pack.csv as the data source (30 rows, no pagination needed)
+- Self z-score vs peer z-score breakdown using quarterly_scores_detailed.csv
 - Improve explanation quality scoring
-
-### v2 (deployment)
+- Migrate from static HTML (Babel standalone) to a proper React build (Vite)
 - Deploy to Google Cloud Run
-- Connect to BigQuery for live scoring data (replace CSV)
-- Add release gate dashboard showing eval metrics
+- Connect to BigQuery for live scoring data (replace static CSV)
+- Add release gate dashboard showing eval metrics (% good, % needs review, filing URL coverage)
+
+### v2 (future)
+- Expand to full QQQ dataset (1,354 rows) with virtual scrolling
+- User authentication
+- Export reviewed anomalies to CSV
+- Live filing ingestion pipeline
 
 ---
 
 ## Tech Stack
 - React (functional components and hooks only)
 - Tailwind CSS for all styling
-- PapaParse for CSV loading
-- localStorage for review state persistence
-- No backend in v0 or v1
-- No authentication in v0 or v1
+- PapaParse for CSV loading (v0); BigQuery via Cloud Run API (v1)
+- localStorage for review state persistence (v0); persistent backend (v1)
+- No authentication in v0
 
 ---
 
@@ -349,8 +352,6 @@ Claude Code should treat these as acceptance criteria, not aspirational goals.
 - Trading signals or buy/sell recommendations
 - Stock price charts or price data
 - Portfolio construction tools
-- Direct BigQuery connection in v0/v1
-- User login or authentication in v0/v1
 
 ---
 
@@ -392,11 +393,11 @@ Coverage: QQQ constituents, 10-Q and 10-K filings
 | 05 | 05-leverage-plans.md | Leverage Plans | ✅ Complete |
 | 06 | 06-brainstorm-features.md | Brainstorm Features | ✅ Complete |
 | 07 | 07-skills-exercise.md | Skills Exercise | ✅ Complete |
-| 08 | 08-style-guide-exercise.md | Style Guide Exercise | 🔄 **Current** |
-| 09 | 09-analyze-exercise.md | Analyze Exercise | ⬜ Not started |
-| 10 | 10-analyze-your-data.md | Analyze Your Data | ⬜ Not started |
-| 11 | 11-automate-your-documentation.md | Automate Your Documentation | ⬜ Not started |
-| 12 | 12-create-your-chief-of-staff.md | Create Your Chief of Staff | ⬜ Not started |
+| 08 | 08-style-guide-exercise.md | Style Guide Exercise | ✅ Complete |
+| 09 | 09-analyze-exercise.md | Analyze Exercise | ✅ Complete |
+| 10 | 10-analyze-your-data.md | Analyze Your Data | ✅ Complete |
+| 11 | 11-automate-your-documentation.md | Automate Your Documentation | ✅ Complete |
+| 12 | 12-create-your-chief-of-staff.md | Create Your Chief of Staff | 🔁 Reviewed — implement when team/live data exists |
 | 18e | 18e-github-exercise.md | GitHub Exercise | ✅ Complete |
 | 19e | 19e-architecture-exercise.md | Architecture Exercise | ✅ Complete |
 | 20e | 20e-tests-and-linter-exercise.md | Tests and Linter Exercise | ✅ Complete |
@@ -404,6 +405,6 @@ Coverage: QQQ constituents, 10-Q and 10-K filings
 | 22e | 22e-publish-your-app-exercise.md | Publish Your App Exercise | ✅ Complete |
 | 23e | 23e-cicd-pipeline-exercise.md | CI/CD Pipeline Exercise | ✅ Complete |
 
-**Current lesson:** `08-style-guide-exercise.md` — Style Guide Exercise
+**Current lesson:** Course complete. Lesson 12 reviewed but deferred — revisit when project has a team or live data.
 
 > Claude: Update this table and the "Current lesson" line whenever a lesson is completed or the student moves on.

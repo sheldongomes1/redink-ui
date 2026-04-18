@@ -1,0 +1,9 @@
+<svg width="420" height="120" viewBox="0 0 420 120" xmlns="http://www.w3.org/2000/svg">
+  <text x="30" y="74" font-family="Georgia, 'Times New Roman', serif" font-size="56" font-weight="700" font-style="italic" fill="#C04830" letter-spacing="-1.5">Red</text>
+  <text x="160" y="74" font-family="Georgia, 'Times New Roman', serif" font-size="56" font-weight="700" font-style="italic" fill="#C04830" letter-spacing="-1.5">Ink</text>
+  <!-- Underline that starts as one line, bifurcates into two divergent strokes -->
+  <path d="M32 94 L238 94" stroke="#C0BBB4" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="238" cy="94" r="2.8" fill="#C04830"/>
+  <path d="M238 94 L286 82" stroke="#1A1816" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.55"/>
+  <path d="M238 94 L286 106" stroke="#C04830" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+</svg>
