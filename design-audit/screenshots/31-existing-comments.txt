@@ -1,0 +1,1 @@
+N/A — dev bypass mode doesn't have a real Firebase auth token, so Firestore comment subscription returns empty. This screenshot would require signing in via the real OAuth flow.
