@@ -14,6 +14,7 @@ const SECTION_LABEL: Record<ChallengeSection, string> = {
   conviction: 'Conviction',
   drivers:    'Top drivers',
   pattern:    'Pattern',
+  eval:       'AI Quality Check',
 };
 
 interface Props {

@@ -7,7 +7,7 @@ import {
 } from 'firebase/firestore';
 import { getFirebaseDb } from './firebase';
 
-export type ChallengeSection = 'conviction' | 'drivers' | 'pattern';
+export type ChallengeSection = 'conviction' | 'drivers' | 'pattern' | 'eval';
 
 export interface ReviewComment {
   id: string;
@@ -94,6 +94,7 @@ export function subscribeToChallengesForRow(
         conviction: [],
         drivers:    [],
         pattern:    [],
+        eval:       [],
       };
       for (const c of all) {
         if (c.section && bySection[c.section]) bySection[c.section].push(c);
