@@ -1,26 +1,31 @@
 'use client';
 
-// Modal that appears when the analyst clicks "Needs Review".
+// Modal that captures a challenge against a specific rail-card section.
 // Assumes the user is already signed in (gated by the landing page).
-// Requires a minimum-length comment, stores it in Firestore.
 import { useEffect, useState } from 'react';
 import { useAuthGate } from '@/lib/useAuth';
 import { isFirebaseConfigured } from '@/lib/firebase';
-import { saveComment } from '@/lib/comments';
+import { saveChallenge, type ChallengeSection } from '@/lib/comments';
 import { capture } from '@/lib/posthog';
 
 const MIN_COMMENT_LEN = 10;
 
+const SECTION_LABEL: Record<ChallengeSection, string> = {
+  conviction: 'Conviction',
+  drivers:    'Top drivers',
+  pattern:    'Pattern',
+};
+
 interface Props {
   open: boolean;
+  section: ChallengeSection | null;
   ticker: string;
   anomaly_score: number;
   report_date: string;
   onClose: () => void;
-  onSubmitted: () => void;
 }
 
-export default function NeedsReviewModal({ open, ticker, anomaly_score, report_date, onClose, onSubmitted }: Props) {
+export default function ChallengeModal({ open, section, ticker, anomaly_score, report_date, onClose }: Props) {
   const { user } = useAuthGate();
   const [comment, setComment]     = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -29,12 +34,12 @@ export default function NeedsReviewModal({ open, ticker, anomaly_score, report_d
 
   useEffect(() => {
     if (open) { setComment(''); setError(null); }
-  }, [open, ticker, report_date]);
+  }, [open, section, ticker, report_date]);
 
-  if (!open) return null;
+  if (!open || !section) return null;
 
   const handleSubmit = async () => {
-    if (!user) { setError('You must be signed in to submit a comment.'); return; }
+    if (!user) { setError('You must be signed in to submit a challenge.'); return; }
     const trimmed = comment.trim();
     if (trimmed.length < MIN_COMMENT_LEN) {
       setError(`Comment must be at least ${MIN_COMMENT_LEN} characters.`);
@@ -43,24 +48,22 @@ export default function NeedsReviewModal({ open, ticker, anomaly_score, report_d
     setSubmitting(true);
     setError(null);
     try {
-      await saveComment({
+      await saveChallenge({
         ticker, anomaly_score, report_date,
+        section,
         comment_text: trimmed,
         user_email: user.email || '',
         user_name:  user.displayName || user.email || 'Unknown',
         user_photo: user.photoURL || null,
         user_uid:   user.uid,
-        status: 'needs_review',
       });
-      capture('comment_submitted', {
-        ticker, anomaly_score,
-        has_comment: true,
+      capture('section_challenged', {
+        ticker, anomaly_score, section,
         comment_length: trimmed.length,
       });
-      onSubmitted();
       onClose();
     } catch (e: any) {
-      setError(e?.message || 'Failed to save comment');
+      setError(e?.message || 'Failed to save challenge');
     } finally {
       setSubmitting(false);
     }
@@ -77,7 +80,9 @@ export default function NeedsReviewModal({ open, ticker, anomaly_score, report_d
         padding: 24, fontFamily: 'inherit',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Flag for review</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
+            Challenge: {SECTION_LABEL[section]}
+          </div>
           <button onClick={onClose} style={{
             width: 28, height: 28, borderRadius: 8, border: '1px solid #e5e7eb',
             background: '#fff', color: '#6b7280', fontSize: 18, lineHeight: 1,
@@ -104,13 +109,13 @@ export default function NeedsReviewModal({ open, ticker, anomaly_score, report_d
                 <img src={user.photoURL} alt="" width={28} height={28} style={{ borderRadius: '50%' }} />
               )}
               <div style={{ fontSize: 12, color: '#374151' }}>
-                Commenting as <strong style={{ color: '#111827' }}>{user.displayName || user.email}</strong>
+                Challenging as <strong style={{ color: '#111827' }}>{user.displayName || user.email}</strong>
               </div>
             </div>
             <textarea
               value={comment}
               onChange={e => setComment(e.target.value)}
-              placeholder="What needs review on this flag?"
+              placeholder={`What's wrong with the ${SECTION_LABEL[section]} reasoning?`}
               rows={4}
               autoFocus
               style={{
@@ -126,12 +131,12 @@ export default function NeedsReviewModal({ open, ticker, anomaly_score, report_d
               </div>
               <button onClick={handleSubmit} disabled={submitting || comment.trim().length < MIN_COMMENT_LEN} style={{
                 padding: '8px 18px', borderRadius: 8,
-                background: submitting || comment.trim().length < MIN_COMMENT_LEN ? '#e5e7eb' : '#635bff',
+                background: submitting || comment.trim().length < MIN_COMMENT_LEN ? '#e5e7eb' : '#C04830',
                 color: submitting || comment.trim().length < MIN_COMMENT_LEN ? '#9ca3af' : '#fff',
                 fontSize: 12, fontWeight: 600, border: 'none',
                 cursor: submitting || comment.trim().length < MIN_COMMENT_LEN ? 'not-allowed' : 'pointer',
               }}>
-                {submitting ? 'Saving…' : 'Submit'}
+                {submitting ? 'Sending…' : 'Submit challenge'}
               </button>
             </div>
           </div>

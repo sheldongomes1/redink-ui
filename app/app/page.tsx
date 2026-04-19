@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { AnomalyListRow, AnomalyDetailRow, TrendRow, EvalRow } from '@/types/redink';
 // PostHog analytics — see event definitions in CLAUDE.md
 import { capture } from '@/lib/posthog';
-import NeedsReviewModal from '../NeedsReviewModal';
-import CommentList from '../CommentList';
 import WarningIcon from '../WarningIcon';
+import ChallengeModal from '../ChallengeModal';
+import SectionChallenges from '../SectionChallenges';
+import FeedbackCard from '../FeedbackCard';
 import Link from 'next/link';
 import { useAuthGate } from '@/lib/useAuth';
 import { signOutUser } from '@/lib/firebase';
+import { subscribeToAllChallengeCounts, subscribeToChallengesForRow, type ChallengeSection, type ReviewComment } from '@/lib/comments';
 import { useRouter } from 'next/navigation';
 
 // ── Types (local) ────────────────────────────────────────────────────────────
@@ -44,8 +46,6 @@ const URGENCY: Record<UrgencyKey, { label: string; fg: string; bg: string; borde
   INVESTIGATE: { label: 'Worth investigating', fg: '#c2410c', bg: '#fff7ed', border: '#fed7aa' },
   CONTEXTUAL:  { label: 'Context only',        fg: '#6b7280', bg: '#f9fafb', border: '#e5e7eb' },
 };
-
-const STORAGE_KEY = 'redink_v1_reviews';
 
 // Trend data normalised for charting (API field names → chart field names)
 type ChartTrend = {
@@ -92,12 +92,6 @@ function getJudgeLabel(score: number) {
 
 function reviewKey(r: { ticker: string; calendar_quarter: string }) {
   return `${r.ticker}_${r.calendar_quarter}`;
-}
-
-function loadReviews(): Record<string, string> {
-  if (typeof window === 'undefined') return {};
-  try { return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}'); }
-  catch { return {}; }
 }
 
 // ── Sparkline ────────────────────────────────────────────────────────────────
@@ -369,11 +363,11 @@ function ScorePopover({ row, style }: { row: AnomalyListRow; style: React.CSSPro
 
 // ── Left Panel ───────────────────────────────────────────────────────────────
 
-function LeftPanel({ rows, selected, onSelect, reviews, user, onSignOut }: {
+function LeftPanel({ rows, selected, onSelect, challengeCounts, user, onSignOut }: {
   rows: AnomalyListRow[];
   selected: AnomalyListRow | null;
   onSelect: (r: AnomalyListRow | null) => void;
-  reviews: Record<string, string>;
+  challengeCounts: Record<string, number>;
   user: { displayName: string | null; email: string | null; photoURL: string | null } | null;
   onSignOut: () => void;
 }) {
@@ -440,19 +434,32 @@ function LeftPanel({ rows, selected, onSelect, reviews, user, onSignOut }: {
     <div style={{ width: 272, flexShrink: 0, borderRight: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', background: '#fff' }}>
       <div style={{ padding: '14px 20px 12px' }}>
         {user && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
+              {user.displayName || user.email}
+            </span>
             <button
               onClick={onSignOut}
-              title={`Sign out (${user.email || user.displayName || ''})`}
+              title={user.email || ''}
               style={{
-                width: 24, height: 24, borderRadius: '50%', border: '1px solid #e5e7eb',
-                background: user.photoURL ? `url(${user.photoURL}) center/cover no-repeat` : '#f3f4f6',
-                color: '#6b7280', cursor: 'pointer', padding: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, fontWeight: 600,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 10px', borderRadius: 999,
+                border: '1px solid #e5e7eb', background: '#fff',
+                fontSize: 11, fontWeight: 500, color: '#4B4540',
+                cursor: 'pointer', fontFamily: 'inherit',
+                transition: 'border-color 0.12s, color 0.12s',
               }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#C04830'; e.currentTarget.style.color = '#C04830'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.color = '#4B4540'; }}
             >
-              {!user.photoURL && (user.displayName || user.email || '?').slice(0, 1).toUpperCase()}
+              {user.photoURL ? (
+                <img src={user.photoURL} alt="" width={16} height={16} style={{ borderRadius: '50%' }} />
+              ) : (
+                <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#f3f4f6', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#6b7280' }}>
+                  {(user.displayName || user.email || '?').slice(0, 1).toUpperCase()}
+                </span>
+              )}
+              Sign out
             </button>
           </div>
         )}
@@ -506,7 +513,7 @@ function LeftPanel({ rows, selected, onSelect, reviews, user, onSignOut }: {
               </div>
               {tierRows.map(row => {
                 const key = reviewKey(row);
-                const rv = reviews[key];
+                const challengeCount = challengeCounts[key] || 0;
                 const isSelected = !!(selected && reviewKey(selected) === key);
                 return (
                   <div key={key} className={`row-item${isSelected ? ' selected' : ''}`} onClick={() => onSelect(row)} style={{ padding: '10px 20px', borderBottom: '1px solid #f9fafb' }}>
@@ -514,14 +521,16 @@ function LeftPanel({ rows, selected, onSelect, reviews, user, onSignOut }: {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{row.ticker}</span>
-                          {rv && (
-                            <span style={{
-                              fontSize: 9, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
-                              color: rv === 'good' ? '#16a34a' : rv === 'review' ? '#d97706' : '#9ca3af',
-                              background: rv === 'good' ? '#f0fdf4' : rv === 'review' ? '#fffbeb' : '#f9fafb',
+                          {challengeCount > 0 && (
+                            <span title={`${challengeCount} challenge${challengeCount === 1 ? '' : 's'}`} style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 3,
+                              fontSize: 9, fontWeight: 600,
+                              color: '#C04830', background: '#fff5f1',
+                              border: '1px solid #F3E2DB',
                               padding: '1px 5px', borderRadius: 4,
                             }}>
-                              {rv === 'good' ? 'Good' : rv === 'review' ? 'Review' : 'Skip'}
+                              <span style={{ fontSize: 8 }}>⚠</span>
+                              {challengeCount}
                             </span>
                           )}
                         </div>
@@ -617,22 +626,44 @@ function EvalDetails({ evalData }: { evalData: EvalRow }) {
   );
 }
 
-function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTrend, reviews, onReview }: {
+const railLinkStyle: React.CSSProperties = { fontSize: 11, color: '#635bff', background: 'none', border: 'none', fontWeight: 500, padding: 0, cursor: 'pointer' };
+
+function ChallengeButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Challenge this section — tell the team what's wrong with the AI's reasoning"
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: 11, color: '#C04830', background: 'none',
+        border: 'none', fontWeight: 500, padding: 0, cursor: 'pointer',
+      }}
+    >
+      <span style={{ fontSize: 10 }}>⚠</span>
+      Challenge
+    </button>
+  );
+}
+
+type ChallengesBySection = Record<ChallengeSection, ReviewComment[]>;
+
+const EMPTY_CHALLENGES: ChallengesBySection = { conviction: [], drivers: [], pattern: [] };
+
+function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTrend, challengesBySection }: {
   row: AnomalyDetailRow | null;
   detailLoading: boolean;
   evalData: EvalRow | null;
   calibration: CalibrationTier[];
   trends: Record<string, ChartTrend[]>;
   fetchTrend: (ticker: string) => void;
-  reviews: Record<string, string>;
-  onReview: (row: AnomalyDetailRow, state: string) => void;
+  challengesBySection: ChallengesBySection;
 }) {
   const [showTrend, setShowTrend] = useState(false);
   const [showDriverTrend, setShowDriverTrend] = useState(false);
   const [showEval, setShowEval] = useState(false);
-  const [showNeedsReview, setShowNeedsReview] = useState(false);
+  const [challengeSection, setChallengeSection] = useState<ChallengeSection | null>(null);
 
-  useEffect(() => { setShowTrend(false); setShowDriverTrend(false); setShowEval(false); setShowNeedsReview(false); }, [row]);
+  useEffect(() => { setShowTrend(false); setShowDriverTrend(false); setShowEval(false); setChallengeSection(null); }, [row]);
 
   if (!row && !detailLoading) {
     return (
@@ -657,7 +688,6 @@ function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTr
   }
 
   const t = TIER[row.conviction_tier as TierKey] || TIER.WATCH;
-  const rv = reviews[reviewKey(row)];
 
   const drivers = [
     { key: row.top_driver_1, val: row.top_driver_1_value },
@@ -791,8 +821,6 @@ function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTr
                 <p style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic' }}>Investigation Brief not available for this filing.</p>
               )}
             </div>
-
-            <CommentList ticker={row.ticker} report_date={row.report_date} />
           </div>
 
           {/* ── Right column: sticky summary rail ──────────────────────── */}
@@ -802,7 +830,10 @@ function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTr
             <div className="rail-card">
               <div className="rail-card-title">
                 <span>Conviction</span>
-                <button onClick={openTrend} style={{ fontSize: 11, color: '#635bff', background: 'none', border: 'none', fontWeight: 500, padding: 0, cursor: 'pointer' }}>History →</button>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <ChallengeButton onClick={() => setChallengeSection('conviction')} />
+                  <button onClick={openTrend} style={railLinkStyle}>History →</button>
+                </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16 }}>
                 <span style={{ fontSize: 32, fontWeight: 700, color: t.fg, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{row.conviction_score.toFixed(1)}</span>
@@ -829,13 +860,17 @@ function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTr
                   );
                 })}
               </div>
+              <SectionChallenges comments={challengesBySection.conviction} />
             </div>
 
             {/* Top drivers card */}
             <div className="rail-card">
               <div className="rail-card-title">
                 <span>Top drivers</span>
-                <button onClick={openDriverTrend} style={{ fontSize: 11, color: '#635bff', background: 'none', border: 'none', fontWeight: 500, padding: 0, cursor: 'pointer' }}>History →</button>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <ChallengeButton onClick={() => setChallengeSection('drivers')} />
+                  <button onClick={openDriverTrend} style={railLinkStyle}>History →</button>
+                </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
                 {drivers.map((d, i) => {
@@ -866,12 +901,16 @@ function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTr
                   );
                 })}
               </div>
+              <SectionChallenges comments={challengesBySection.drivers} />
             </div>
 
             {/* Pattern / Beneish flags */}
             {(row.pattern_name || row.beneish_manipulation_flag) && (
               <div className="rail-card">
-                <div className="rail-card-title">Pattern</div>
+                <div className="rail-card-title">
+                  <span>Pattern</span>
+                  <ChallengeButton onClick={() => setChallengeSection('pattern')} />
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {row.pattern_name && (
                     <span style={{ fontSize: 11, color: '#374151', background: '#fff', border: '1px solid #e5e7eb', padding: '5px 10px', borderRadius: 6, display: 'inline-block', alignSelf: 'flex-start' }}>{row.pattern_name}</span>
@@ -882,8 +921,12 @@ function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTr
                     </span>
                   )}
                 </div>
+                <SectionChallenges comments={challengesBySection.pattern} />
               </div>
             )}
+
+            {/* General feedback — not tied to any row */}
+            <FeedbackCard />
 
           </aside>
         </div>
@@ -891,29 +934,8 @@ function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTr
         <div style={{ height: 40 }} />
       </div>
 
-      {/* Bottom action bar */}
+      {/* Bottom action bar — trust chips + filing link (review verbs moved to per-section Challenge) */}
       <div style={{ padding: '14px 32px', borderTop: '1px solid #f3f4f6', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-        {[
-          { key: 'good',   label: '✓ Good',         activeBg: '#f0fdf4', activeBdr: '#86efac', activeText: '#16a34a' },
-          { key: 'review', label: '⚠ Needs Review', activeBg: '#fffbeb', activeBdr: '#fcd34d', activeText: '#d97706' },
-          { key: 'skip',   label: '✗ Skip',         activeBg: '#f9fafb', activeBdr: '#d1d5db', activeText: '#6b7280' },
-        ].map(btn => {
-          const active = rv === btn.key;
-          const handleClick = () => {
-            // "Needs Review" requires a comment + Google sign-in. Good/Skip save immediately.
-            if (btn.key === 'review' && !active) { setShowNeedsReview(true); return; }
-            onReview(row, btn.key);
-          };
-          return (
-            <button key={btn.key} onClick={handleClick} style={{
-              padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 500,
-              border: `1px solid ${active ? btn.activeBdr : '#e5e7eb'}`,
-              background: active ? btn.activeBg : '#fff',
-              color: active ? btn.activeText : '#6b7280',
-              transition: 'all 0.12s',
-            }}>{btn.label}</button>
-          );
-        })}
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: 6 }}>
           {['8 features', 'brick3_q_v2', row.filing_url ? 'Filing ✓' : 'Filing ✗'].map(chip => (
@@ -941,13 +963,13 @@ function RightPanel({ row, detailLoading, evalData, calibration, trends, fetchTr
       {showTrend && <TrendModal row={row} trend={trend} loading={!trends[row.ticker]} onClose={() => setShowTrend(false)} />}
       {showDriverTrend && <DriversModal row={row} trend={trend} loading={!trends[row.ticker]} onClose={() => setShowDriverTrend(false)} />}
 
-      <NeedsReviewModal
-        open={showNeedsReview}
+      <ChallengeModal
+        open={challengeSection !== null}
+        section={challengeSection}
         ticker={row.ticker}
         anomaly_score={row.anomaly_score_0_100}
         report_date={row.report_date}
-        onClose={() => setShowNeedsReview(false)}
-        onSubmitted={() => onReview(row, 'review')}
+        onClose={() => setChallengeSection(null)}
       />
     </div>
   );
@@ -966,15 +988,28 @@ export default function App() {
   const [evals, setEvals] = useState<Record<string, EvalRow | null>>({});
   const [calibration, setCalibration] = useState<CalibrationTier[]>([]);
   const [trends, setTrends] = useState<Record<string, ChartTrend[]>>({});
-  const [reviews, setReviews] = useState<Record<string, string>>({});
+  const [challengeCounts, setChallengeCounts] = useState<Record<string, number>>({});
+  const [challengesBySection, setChallengesBySection] = useState<ChallengesBySection>(EMPTY_CHALLENGES);
 
   // Redirect unauthenticated users to the landing page.
   useEffect(() => {
     if (authStatus === 'unauthed' || authStatus === 'unconfigured') router.replace('/');
   }, [authStatus, router]);
 
-  // Hydrate localStorage reviews on client
-  useEffect(() => { setReviews(loadReviews()); }, []);
+  // Global: total challenges per row (left-panel ⚠ dot).
+  useEffect(() => {
+    if (authStatus !== 'authed') return;
+    return subscribeToAllChallengeCounts(setChallengeCounts);
+  }, [authStatus]);
+
+  // Per-selected-row: one listener, partitioned by section client-side.
+  useEffect(() => {
+    if (authStatus !== 'authed' || !selected) {
+      setChallengesBySection(EMPTY_CHALLENGES);
+      return;
+    }
+    return subscribeToChallengesForRow(selected.ticker, selected.report_date, setChallengesBySection);
+  }, [authStatus, selected?.ticker, selected?.report_date]);
 
   // Load anomaly list + calibration stats once
   useEffect(() => {
@@ -1056,23 +1091,6 @@ export default function App() {
       })
       .catch(err => console.error('trend fetch failed:', err));
   }, [trends]);
-
-  const handleReview = useCallback((row: AnomalyDetailRow, state: string) => {
-    const key = reviewKey(row);
-    setReviews(prev => {
-      const isSame = prev[key] === state;
-      const next = { ...prev };
-      if (isSame) delete next[key]; else next[key] = state;
-      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
-      return next;
-    });
-    capture('review_action', {
-      ticker: row.ticker,
-      anomaly_score: row.anomaly_score_0_100,
-      report_date: row.report_date,
-      action: state,
-    });
-  }, []);
 
   // Flush time-spent on page unload so we don't lose the last view
   useEffect(() => {
@@ -1163,7 +1181,7 @@ export default function App() {
           rows={rows}
           selected={selected}
           onSelect={setSelected}
-          reviews={reviews}
+          challengeCounts={challengeCounts}
           user={user ? { displayName: user.displayName, email: user.email, photoURL: user.photoURL } : null}
           onSignOut={handleSignOut}
         />
@@ -1174,8 +1192,7 @@ export default function App() {
           calibration={calibration}
           trends={trends}
           fetchTrend={fetchTrend}
-          reviews={reviews}
-          onReview={handleReview}
+          challengesBySection={challengesBySection}
         />
       </div>
     </div>
