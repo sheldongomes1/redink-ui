@@ -3,23 +3,18 @@
 // "AI Quality Check" rail card. Reads from the /api/eval payload shape
 // (3 binary PASS/FAIL/ABSTAIN checks per trace, with claim-level critique).
 //
-// Display rules:
-//   PASS    → green badge; click to expand the claim-evidence list
-//   FAIL    → red badge; critique rendered inline (no click required)
-//   ABSTAIN → grey badge; reason on hover
-//   missing → row hidden entirely
+// The rail is intentionally minimal: badge + check name only. The
+// "Explain the evals" button opens ExplainEvalsModal for the details.
 
-import { useState } from 'react';
-import { capture } from '@/lib/posthog';
 import type { CheckResult, EvalChecks, EvalCheckName, EvalClaim } from '@/types/redink';
 
-const DISPLAY_NAME: Record<EvalCheckName, string> = {
+export const DISPLAY_NAME: Record<EvalCheckName, string> = {
   faithfulness:       'Grounded in filing',
-  direction_accuracy: 'Signal read',
+  direction_accuracy: 'Direction read',
   actionability:      'Next step clarity',
 };
 
-const CHECK_ORDER: EvalCheckName[] = ['faithfulness', 'direction_accuracy', 'actionability'];
+export const CHECK_ORDER: EvalCheckName[] = ['faithfulness', 'direction_accuracy', 'actionability'];
 
 // Each check uses different verdict vocabulary. Positive verdicts mean the claim
 // was upheld; negative verdicts mean the judge found a problem.
@@ -27,23 +22,11 @@ const CHECK_ORDER: EvalCheckName[] = ['faithfulness', 'direction_accuracy', 'act
 //   direction_accuracy → Identified / Confirmed / Missed / Wrong
 //   actionability      → Verified / Correct / Unsupported
 const NEGATIVE_VERDICTS = new Set(['Unsupported', 'Contradicted', 'Missed', 'Wrong', 'Incorrect']);
-function isPositive(verdict: string): boolean {
+export function isPositive(verdict: string): boolean {
   return !NEGATIVE_VERDICTS.has(verdict);
 }
 
-function ChevronRight({ down = false }: { down?: boolean }) {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden style={{
-      transition: 'transform 0.12s',
-      transform: down ? 'rotate(90deg)' : 'rotate(0deg)',
-      flexShrink: 0,
-    }}>
-      <path d="M3.5 2 L6.5 5 L3.5 8" stroke="#9ca3af" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function CheckBadge({ result }: { result: CheckResult['result'] }) {
+export function CheckBadge({ result }: { result: CheckResult['result'] }) {
   const styles = {
     PASS:    { fg: '#166534', bg: '#f0fdf4', border: '#86efac' },
     FAIL:    { fg: '#b91c1c', bg: '#fef2f2', border: '#fecaca' },
@@ -77,7 +60,7 @@ function VerdictTag({ verdict }: { verdict: string }) {
   );
 }
 
-function ClaimList({ claims }: { claims: EvalClaim[] }) {
+export function ClaimList({ claims }: { claims: EvalClaim[] }) {
   if (!claims || claims.length === 0) return null;
   return (
     <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -104,7 +87,7 @@ function ClaimList({ claims }: { claims: EvalClaim[] }) {
   );
 }
 
-function FailPoints({ critique }: { critique: string }) {
+export function FailPoints({ critique }: { critique: string }) {
   const points = critique.split(' | ').map(s => s.trim()).filter(Boolean);
   if (points.length === 0) return null;
   return (
@@ -120,78 +103,26 @@ function FailPoints({ critique }: { critique: string }) {
 }
 
 function CheckRow({ item }: { item: CheckResult }) {
-  const [expanded, setExpanded] = useState(false);
-
-  // Expandable if we have something to show on click.
-  const passCount = item.result === 'PASS' && item.claims ? item.claims.length : 0;
-  const failPoints = item.result === 'FAIL' && item.critique
-    ? item.critique.split(' | ').map(s => s.trim()).filter(Boolean)
-    : [];
-  const canExpand =
-    (item.result === 'PASS' && passCount > 0) ||
-    (item.result === 'FAIL' && failPoints.length > 0);
-
-  const toggleLabel =
-    item.result === 'PASS' ? `${passCount} claim${passCount === 1 ? '' : 's'}` :
-    item.result === 'FAIL' ? `${failPoints.length} point${failPoints.length === 1 ? '' : 's'}` :
-    '';
-
   return (
     <div style={{
       padding: '10px 12px',
       background: '#fff',
       border: '1px solid #f3f4f6',
       borderRadius: 8,
+      display: 'flex', alignItems: 'center', gap: 8,
     }}>
-      <div
-        onClick={canExpand ? () => {
-          setExpanded(v => {
-            const next = !v;
-            if (next) capture('eval_claim_expanded', { check: item.check, result: item.result });
-            return next;
-          });
-        } : undefined}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          cursor: canExpand ? 'pointer' : 'default',
-        }}
-      >
-        <CheckBadge result={item.result} />
-        <span style={{ fontSize: 12, fontWeight: 500, color: '#374151', flex: 1 }}>
-          {DISPLAY_NAME[item.check]}
-        </span>
-        {canExpand && (
-          <span style={{ fontSize: 10, color: '#9ca3af', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            {toggleLabel}
-            <ChevronRight down={expanded} />
-          </span>
-        )}
-      </div>
-
-      {/* ABSTAIN: keep reason inline but muted — no click affordance */}
-      {item.result === 'ABSTAIN' && item.critique && (
-        <div title={item.critique} style={{
-          marginTop: 6, fontSize: 10, color: '#9ca3af', fontStyle: 'italic',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'help',
-        }}>
-          Check unavailable — {item.critique}
-        </div>
-      )}
-
-      {/* Expanded content: PASS shows claim list with evidence; FAIL shows bulleted points */}
-      {canExpand && expanded && item.result === 'PASS' && (
-        <ClaimList claims={item.claims!} />
-      )}
-      {canExpand && expanded && item.result === 'FAIL' && (
-        <FailPoints critique={item.critique} />
-      )}
+      <CheckBadge result={item.result} />
+      <span style={{ fontSize: 12, fontWeight: 500, color: '#374151', flex: 1 }}>
+        {DISPLAY_NAME[item.check]}
+      </span>
     </div>
   );
 }
 
-export default function EvalRailCard({ checks, onChallenge }: {
+export default function EvalRailCard({ checks, onChallenge, onExplain }: {
   checks: EvalChecks | null;
   onChallenge: () => void;
+  onExplain: () => void;
 }) {
   if (!checks) return null;
 
@@ -221,6 +152,24 @@ export default function EvalRailCard({ checks, onChallenge }: {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {rows.map(r => <CheckRow key={r.check} item={r} />)}
       </div>
+      <button
+        onClick={onExplain}
+        style={{
+          marginTop: 14, width: '100%',
+          padding: '7px 12px',
+          background: '#fff',
+          border: '1px solid #D4CCC2',
+          borderRadius: 8,
+          fontSize: 11, fontWeight: 500, color: '#4B4540',
+          cursor: 'pointer', fontFamily: 'inherit',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          transition: 'border-color 0.12s, color 0.12s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = '#C04830'; e.currentTarget.style.color = '#C04830'; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = '#D4CCC2'; e.currentTarget.style.color = '#4B4540'; }}
+      >
+        Explain the evals <span style={{ fontSize: 12 }}>→</span>
+      </button>
     </div>
   );
 }
