@@ -649,7 +649,7 @@ function ChallengeButton({ onClick }: { onClick: () => void }) {
 
 type ChallengesBySection = Record<ChallengeSection, ReviewComment[]>;
 
-const EMPTY_CHALLENGES: ChallengesBySection = { conviction: [], drivers: [], pattern: [] };
+const EMPTY_CHALLENGES: ChallengesBySection = { conviction: [], drivers: [], pattern: [], eval: [] };
 
 function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetchTrend, challengesBySection }: {
   row: AnomalyDetailRow | null;
