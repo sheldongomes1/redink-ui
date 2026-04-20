@@ -18,6 +18,11 @@ export function initPostHog() {
     api_host: POSTHOG_HOST,
     capture_pageview: true,
     capture_pageleave: true,
+    autocapture: true,
+    // Session Replay also has to be enabled at the project level in PostHog
+    // (Settings → Session Replay → Record user sessions). With both on,
+    // recordings start the next time a user loads the app.
+    disable_session_recording: false,
   });
   window.posthog = posthog;
 }

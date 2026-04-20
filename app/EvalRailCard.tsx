@@ -10,6 +10,7 @@
 //   missing → row hidden entirely
 
 import { useState } from 'react';
+import { capture } from '@/lib/posthog';
 import type { CheckResult, EvalChecks, EvalCheckName, EvalClaim } from '@/types/redink';
 
 const DISPLAY_NAME: Record<EvalCheckName, string> = {
@@ -143,7 +144,13 @@ function CheckRow({ item }: { item: CheckResult }) {
       borderRadius: 8,
     }}>
       <div
-        onClick={canExpand ? () => setExpanded(v => !v) : undefined}
+        onClick={canExpand ? () => {
+          setExpanded(v => {
+            const next = !v;
+            if (next) capture('eval_claim_expanded', { check: item.check, result: item.result });
+            return next;
+          });
+        } : undefined}
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
           cursor: canExpand ? 'pointer' : 'default',

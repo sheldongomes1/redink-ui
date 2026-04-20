@@ -317,7 +317,10 @@ function DriversModal({ row, trend, loading, onClose }: { row: any; trend: Chart
 
   return (
     <ModalShell title={`${row.ticker} — Driver History`} subtitle={`${row.company_name} · What triggered the flag, over time`} onClose={onClose}>
-      <TabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />
+      <TabBar tabs={tabs} active={activeTab} onChange={(k: string) => {
+        setActiveTab(k);
+        capture('driver_history_tab_switched', { ticker: row.ticker, calendar_quarter: row.calendar_quarter, driver: k });
+      }} />
       {loading ? (
         <div style={{ padding: 60, textAlign: 'center' }}>
           <div style={{ width: 22, height: 22, border: '2.5px solid #e5e7eb', borderTopColor: '#635bff', borderRadius: '50%', margin: '0 auto 10px', animation: 'spin 0.8s linear infinite' }} />
@@ -665,6 +668,11 @@ function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetch
   const [showExplain, setShowExplain] = useState(false);
   const [challengeSection, setChallengeSection] = useState<ChallengeSection | null>(null);
 
+  const openChallenge = (section: ChallengeSection) => {
+    setChallengeSection(section);
+    if (row) capture('challenge_opened', { ticker: row.ticker, calendar_quarter: row.calendar_quarter, section });
+  };
+
   useEffect(() => { setShowTrend(false); setShowDriverTrend(false); setShowExplain(false); setChallengeSection(null); }, [row]);
 
   if (!row && !detailLoading) {
@@ -699,8 +707,14 @@ function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetch
 
   const trend = trends[row.ticker] || [];
 
-  const openTrend = () => { fetchTrend(row.ticker); setShowTrend(true); };
-  const openDriverTrend = () => { fetchTrend(row.ticker); setShowDriverTrend(true); };
+  const openTrend = () => {
+    fetchTrend(row.ticker); setShowTrend(true);
+    capture('trend_history_opened', { ticker: row.ticker, calendar_quarter: row.calendar_quarter });
+  };
+  const openDriverTrend = () => {
+    fetchTrend(row.ticker); setShowDriverTrend(true);
+    capture('driver_history_opened', { ticker: row.ticker, calendar_quarter: row.calendar_quarter });
+  };
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fff', overflow: 'hidden' }}>
@@ -831,7 +845,7 @@ function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetch
               <div className="rail-card-title">
                 <span>Conviction</span>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <ChallengeButton onClick={() => setChallengeSection('conviction')} />
+                  <ChallengeButton onClick={() => openChallenge('conviction')} />
                   <button onClick={openTrend} style={railLinkStyle}>History →</button>
                 </div>
               </div>
@@ -886,7 +900,7 @@ function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetch
               <div className="rail-card-title">
                 <span>What triggered it?</span>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <ChallengeButton onClick={() => setChallengeSection('drivers')} />
+                  <ChallengeButton onClick={() => openChallenge('drivers')} />
                   <button onClick={openDriverTrend} style={railLinkStyle}>History →</button>
                 </div>
               </div>
@@ -927,7 +941,7 @@ function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetch
               <div className="rail-card">
                 <div className="rail-card-title">
                   <span>Pattern</span>
-                  <ChallengeButton onClick={() => setChallengeSection('pattern')} />
+                  <ChallengeButton onClick={() => openChallenge('pattern')} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {row.pattern_name && (
@@ -945,7 +959,7 @@ function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetch
 
             {/* AI Quality Check — rendered only when eval_scores returned something */}
             <div>
-              <EvalRailCard checks={evalChecks} onChallenge={() => setChallengeSection('eval')} />
+              <EvalRailCard checks={evalChecks} onChallenge={() => openChallenge('eval')} />
               <SectionChallenges comments={challengesBySection.eval} />
             </div>
 
