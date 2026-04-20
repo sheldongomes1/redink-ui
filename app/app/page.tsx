@@ -10,6 +10,7 @@ import SectionChallenges from '../SectionChallenges';
 import FeedbackCard from '../FeedbackCard';
 import EvalRailCard from '../EvalRailCard';
 import ExplainModal from '../ExplainModal';
+import ExplainEvalsModal from '../ExplainEvalsModal';
 import Link from 'next/link';
 import { useAuthGate } from '@/lib/useAuth';
 import { signOutUser } from '@/lib/firebase';
@@ -666,6 +667,7 @@ function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetch
   const [showTrend, setShowTrend] = useState(false);
   const [showDriverTrend, setShowDriverTrend] = useState(false);
   const [showExplain, setShowExplain] = useState(false);
+  const [showExplainEvals, setShowExplainEvals] = useState(false);
   const [challengeSection, setChallengeSection] = useState<ChallengeSection | null>(null);
 
   const openChallenge = (section: ChallengeSection) => {
@@ -673,7 +675,7 @@ function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetch
     if (row) capture('challenge_opened', { ticker: row.ticker, calendar_quarter: row.calendar_quarter, section });
   };
 
-  useEffect(() => { setShowTrend(false); setShowDriverTrend(false); setShowExplain(false); setChallengeSection(null); }, [row]);
+  useEffect(() => { setShowTrend(false); setShowDriverTrend(false); setShowExplain(false); setShowExplainEvals(false); setChallengeSection(null); }, [row]);
 
   if (!row && !detailLoading) {
     return (
@@ -959,7 +961,14 @@ function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetch
 
             {/* AI Quality Check — rendered only when eval_scores returned something */}
             <div>
-              <EvalRailCard checks={evalChecks} onChallenge={() => openChallenge('eval')} />
+              <EvalRailCard
+                checks={evalChecks}
+                onChallenge={() => openChallenge('eval')}
+                onExplain={() => {
+                  setShowExplainEvals(true);
+                  capture('explain_evals_opened', { ticker: row.ticker, calendar_quarter: row.calendar_quarter });
+                }}
+              />
               <SectionChallenges comments={challengesBySection.eval} />
             </div>
 
@@ -1006,6 +1015,14 @@ function RightPanel({ row, detailLoading, evalChecks, calibration, trends, fetch
         ticker={row.ticker}
         calendar_quarter={row.calendar_quarter}
         onClose={() => setShowExplain(false)}
+      />
+
+      <ExplainEvalsModal
+        open={showExplainEvals}
+        checks={evalChecks}
+        ticker={row.ticker}
+        calendar_quarter={row.calendar_quarter}
+        onClose={() => setShowExplainEvals(false)}
       />
 
       <ChallengeModal
