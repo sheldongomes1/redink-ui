@@ -5,24 +5,32 @@ export const dynamic = 'force-dynamic';
 
 interface CalibrationRow {
   conviction_tier: string;
-  total: number;
-  evaluated: number;
-  mean_judge: number | null;
-  direction_match_pct: number | null;
+  total: number;           // total rows in the pack for this tier
+  evaluated: number;       // distinct traces that have at least one eval check
+  mean_pass_pct: number | null;  // average per-trace PASS rate, in percent
 }
 
+// For each tier: how many traces exist vs how many were evaluated, and the
+// mean per-trace PASS rate across PASS+FAIL (ABSTAIN excluded from denominator).
 const QUERY = `
+  WITH trace_pass AS (
+    SELECT
+      SUBSTR(trace_id, 1, STRPOS(trace_id, '_') - 1)  AS ticker,
+      SUBSTR(trace_id, STRPOS(trace_id, '_') + 1)     AS calendar_quarter,
+      SAFE_DIVIDE(
+        COUNTIF(result = 'PASS'),
+        COUNTIF(result IN ('PASS', 'FAIL'))
+      ) AS pass_rate
+    FROM \`qqq-anomaly-lab.qqq_finance.eval_scores\`
+    GROUP BY trace_id
+  )
   SELECT
     p.conviction_tier,
-    COUNT(*) AS total,
-    COUNTIF(e.ticker IS NOT NULL) AS evaluated,
-    ROUND(AVG(IF(e.ticker IS NOT NULL, e.avg_judge_score, NULL)), 2) AS mean_judge,
-    ROUND(SAFE_DIVIDE(
-      COUNTIF(e.ticker IS NOT NULL AND e.direction_label_match),
-      COUNTIF(e.ticker IS NOT NULL)
-    ) * 100, 0) AS direction_match_pct
+    COUNT(*)                                                                      AS total,
+    COUNTIF(t.ticker IS NOT NULL)                                                 AS evaluated,
+    ROUND(AVG(IF(t.ticker IS NOT NULL, t.pass_rate, NULL)) * 100, 0)              AS mean_pass_pct
   FROM \`qqq-anomaly-lab.qqq_finance.top_anomaly_review_pack\` p
-  LEFT JOIN \`qqq-anomaly-lab.qqq_finance.eval_scores\` e
+  LEFT JOIN trace_pass t
     USING (ticker, calendar_quarter)
   GROUP BY p.conviction_tier
   ORDER BY p.conviction_tier
@@ -34,9 +42,6 @@ export async function GET() {
     return NextResponse.json({ data: rows });
   } catch (err) {
     console.error('[/api/eval/calibration] BQ query failed:', err);
-    return NextResponse.json(
-      { error: 'Failed to load calibration data' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to load calibration data' }, { status: 500 });
   }
 }

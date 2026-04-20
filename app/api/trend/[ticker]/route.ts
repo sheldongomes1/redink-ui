@@ -11,8 +11,9 @@ const QUERY = `
     conviction_score, conviction_tier,
     pillar_anomaly, pillar_earnings, pillar_transparency,
     anomaly_score_0_100, beneish_m_score, beneish_manipulation_flag,
-    z_revenue_growth_yoy, z_net_margin, z_ocf_to_net_income,
-    z_assets_growth_yoy, z_debt_to_assets, z_accrual_ratio,
+    z_revenue_growth_yoy, z_net_margin, z_ocf_to_net_income, z_ocf_to_assets,
+    z_assets_growth_yoy, z_debt_to_assets, z_equity_to_assets, z_equity_multiplier,
+    z_accrual_ratio, z_net_income_growth_yoy,
     divergence_label, mda_tone, pattern_name
   FROM \`qqq-anomaly-lab.qqq_finance.company_trend\`
   WHERE ticker = @ticker
