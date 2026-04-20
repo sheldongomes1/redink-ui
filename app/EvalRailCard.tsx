@@ -152,17 +152,24 @@ export default function EvalRailCard({ checks, onChallenge, onExplain }: {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {rows.map(r => <CheckRow key={r.check} item={r} />)}
       </div>
-      <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          onClick={onExplain}
-          style={{
-            fontSize: 11, color: '#635bff', background: 'none',
-            border: 'none', fontWeight: 500, padding: 0, cursor: 'pointer',
-          }}
-        >
-          Explain the evals →
-        </button>
-      </div>
+      <button
+        onClick={onExplain}
+        style={{
+          marginTop: 14, width: '100%',
+          padding: '7px 12px',
+          background: '#fff',
+          border: '1px solid #D4CCC2',
+          borderRadius: 8,
+          fontSize: 11, fontWeight: 500, color: '#4B4540',
+          cursor: 'pointer', fontFamily: 'inherit',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          transition: 'border-color 0.12s, color 0.12s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = '#C04830'; e.currentTarget.style.color = '#C04830'; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = '#D4CCC2'; e.currentTarget.style.color = '#4B4540'; }}
+      >
+        Explain the evals <span style={{ fontSize: 12 }}>→</span>
+      </button>
     </div>
   );
 }

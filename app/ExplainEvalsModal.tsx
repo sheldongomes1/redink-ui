@@ -1,8 +1,7 @@
 'use client';
 
-// "Explain the evals" modal — three tabs/cards (one per eval check), exclusive
-// expansion pattern matching ExplainModal. The rail card stays minimal; all
-// detail lives here.
+// "Explain the evals" modal — three horizontal check tabs + a single detail
+// panel below, mirroring the ExplainModal (Explain the numbers) layout.
 
 import { useEffect, useRef, useState } from 'react';
 import { capture } from '@/lib/posthog';
@@ -12,16 +11,21 @@ import {
 } from './EvalRailCard';
 import type { CheckResult, EvalChecks, EvalCheckName } from '@/types/redink';
 
-// Plain-English one-liners for each check — shown under the check name so
-// users don't have to infer what each judge is actually measuring.
 const CHECK_INTRO: Record<EvalCheckName, string> = {
   faithfulness:
-    'Does every factual claim in the explanation trace back to the filing, the score data, or the anomaly drivers? Catches hallucination.',
+    'Does every factual claim trace back to the filing, score data, or drivers? Catches hallucination.',
   direction_accuracy:
-    'Did the AI call the direction of the anomaly correctly — e.g. margin collapsed vs expanded, revenue surged vs fell?',
+    'Did the AI call the direction of the anomaly correctly — margin collapsed vs expanded, revenue surged vs fell?',
   actionability:
-    'Is the next-step guidance specific enough that an analyst can act on it, or is it vague boilerplate?',
+    'Is the next-step guidance specific enough to act on, or is it vague boilerplate?',
 };
+
+// Per-check accent colour driven by the PASS/FAIL/ABSTAIN result.
+function accentFor(result: CheckResult['result']): string {
+  if (result === 'PASS') return '#16a34a';
+  if (result === 'FAIL') return '#dc2626';
+  return '#9ca3af';
+}
 
 function ChevronRight({ down = false }: { down?: boolean }) {
   return (
@@ -35,74 +39,75 @@ function ChevronRight({ down = false }: { down?: boolean }) {
   );
 }
 
-function CheckSection({
-  item, expanded, onToggle, sectionRef,
-}: {
+function CheckTab({ item, expanded, onToggle }: {
   item: CheckResult;
   expanded: boolean;
   onToggle: () => void;
-  sectionRef: (el: HTMLDivElement | null) => void;
 }) {
-  const passCount = item.result === 'PASS' && item.claims ? item.claims.length : 0;
-  const failPoints = item.result === 'FAIL' && item.critique
-    ? item.critique.split(' | ').map(s => s.trim()).filter(Boolean)
-    : [];
-  const canExpand =
-    (item.result === 'PASS' && passCount > 0) ||
-    (item.result === 'FAIL' && failPoints.length > 0);
-
-  const toggleLabel =
-    item.result === 'PASS' ? `${passCount} claim${passCount === 1 ? '' : 's'}` :
-    item.result === 'FAIL' ? `${failPoints.length} point${failPoints.length === 1 ? '' : 's'}` :
-    '';
-
+  const accent = accentFor(item.result);
   return (
-    <div ref={sectionRef} style={{
-      border: '1px solid #f3f4f6', borderRadius: 10,
-      background: '#fff', padding: '14px 16px',
-      scrollMarginTop: 16,
+    <div style={{
+      flex: 1, minWidth: 0,
+      padding: 14,
+      background: '#fff',
+      border: `1px solid ${expanded ? accent : '#e5e7eb'}`,
+      borderRadius: 10,
+      transition: 'border-color 0.12s',
+      display: 'flex', flexDirection: 'column',
     }}>
-      <div
-        onClick={canExpand ? onToggle : undefined}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          cursor: canExpand ? 'pointer' : 'default',
-        }}
-      >
+      <div style={{ marginBottom: 8 }}>
         <CheckBadge result={item.result} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
-            {DISPLAY_NAME[item.check]}
-          </div>
-          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2, lineHeight: 1.5 }}>
-            {CHECK_INTRO[item.check]}
-          </div>
-        </div>
-        {canExpand && (
-          <span style={{ fontSize: 11, color: '#9ca3af', display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {toggleLabel}
-            <ChevronRight down={expanded} />
-          </span>
-        )}
       </div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 4 }}>
+        {DISPLAY_NAME[item.check]}
+      </div>
+      <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.5, marginBottom: 10, flex: 1 }}>
+        {CHECK_INTRO[item.check]}
+      </div>
+      <button onClick={onToggle} style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: 11, fontWeight: 500, color: accent,
+        background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+      }}>
+        {expanded ? 'Hide details' : 'Show details'}
+        <ChevronRight down={expanded} />
+      </button>
+    </div>
+  );
+}
 
-      {/* ABSTAIN: inline muted note — check didn't run */}
-      {item.result === 'ABSTAIN' && item.critique && (
-        <div style={{
-          marginTop: 10, fontSize: 11, color: '#6b7280', fontStyle: 'italic',
-          background: '#f9fafb', border: '1px solid #f3f4f6',
-          borderRadius: 6, padding: '8px 10px',
-        }}>
-          Check unavailable — {item.critique}
+function CheckDetail({ item }: { item: CheckResult }) {
+  if (item.result === 'PASS' && item.claims && item.claims.length > 0) {
+    return (
+      <div style={{ padding: '16px 18px', background: '#fafbfc', borderRadius: 10, border: '1px solid #f3f4f6' }}>
+        <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.5, marginBottom: 10 }}>
+          Each factual claim the AI made, paired with the evidence the judge checked it against.
         </div>
-      )}
-
-      {canExpand && expanded && item.result === 'PASS' && (
-        <ClaimList claims={item.claims!} />
-      )}
-      {canExpand && expanded && item.result === 'FAIL' && (
+        <ClaimList claims={item.claims} />
+      </div>
+    );
+  }
+  if (item.result === 'FAIL' && item.critique) {
+    return (
+      <div style={{ padding: '16px 18px', background: '#fef8f8', borderRadius: 10, border: '1px solid #fecaca' }}>
+        <div style={{ fontSize: 11, color: '#7f1d1d', lineHeight: 1.5, marginBottom: 10 }}>
+          The judge flagged the following problems:
+        </div>
         <FailPoints critique={item.critique} />
-      )}
+      </div>
+    );
+  }
+  if (item.result === 'ABSTAIN') {
+    return (
+      <div style={{ padding: '16px 18px', background: '#fafafa', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 11, color: '#6b7280', lineHeight: 1.55 }}>
+        <div style={{ fontWeight: 600, color: '#374151', marginBottom: 4 }}>Check unavailable</div>
+        {item.critique || 'The judge could not evaluate this check for this trace.'}
+      </div>
+    );
+  }
+  return (
+    <div style={{ padding: '16px 18px', background: '#fafafa', borderRadius: 10, border: '1px solid #f3f4f6', fontSize: 11, color: '#6b7280' }}>
+      No additional detail available for this check.
     </div>
   );
 }
@@ -117,9 +122,15 @@ interface Props {
 
 export default function ExplainEvalsModal({ open, checks, ticker, calendar_quarter, onClose }: Props) {
   const [expanded, setExpanded] = useState<EvalCheckName | null>(null);
-  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const detailRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { if (!open) setExpanded(null); }, [open, ticker, calendar_quarter]);
+
+  useEffect(() => {
+    if (expanded && detailRef.current) {
+      detailRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [expanded]);
 
   if (!open || !checks) return null;
 
@@ -127,14 +138,12 @@ export default function ExplainEvalsModal({ open, checks, ticker, calendar_quart
     .map(name => checks[name])
     .filter((r): r is CheckResult => !!r);
 
+  const expandedItem = expanded ? checks[expanded] : null;
+
   const toggle = (check: EvalCheckName) => {
     setExpanded(prev => {
       const next = prev === check ? null : check;
-      if (next) {
-        capture('eval_claim_expanded', { check, result: checks[check]?.result });
-        // Scroll into view after layout settles
-        setTimeout(() => sectionRefs.current[check]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
-      }
+      if (next) capture('eval_claim_expanded', { check, result: checks[check]?.result });
       return next;
     });
   };
@@ -145,7 +154,7 @@ export default function ExplainEvalsModal({ open, checks, ticker, calendar_quart
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        width: 'min(640px, calc(100vw - 32px))',
+        width: 'min(760px, calc(100vw - 32px))',
         maxHeight: 'calc(100vh - 80px)',
         background: '#fafafa',
         borderRadius: 14, boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
@@ -173,19 +182,29 @@ export default function ExplainEvalsModal({ open, checks, ticker, calendar_quart
         </div>
 
         {/* Body */}
-        <div style={{ padding: '16px 22px 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.55 }}>
-            Three independent LLM-judge checks run on every AI-generated anomaly explanation. Click a row to see the specific claims or failure points the judge produced.
+        <div style={{ padding: '16px 22px 22px', overflowY: 'auto' }}>
+          <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.55, marginBottom: 14 }}>
+            Three independent LLM-judge checks run on every AI-generated anomaly explanation. Click &ldquo;Show details&rdquo; on a check to see the specific claims or failure points.
           </div>
-          {rows.map(r => (
-            <CheckSection
-              key={r.check}
-              item={r}
-              expanded={expanded === r.check}
-              onToggle={() => toggle(r.check)}
-              sectionRef={el => { sectionRefs.current[r.check] = el; }}
-            />
-          ))}
+
+          {/* Horizontal tab strip — three checks side by side */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+            {rows.map(r => (
+              <CheckTab
+                key={r.check}
+                item={r}
+                expanded={expanded === r.check}
+                onToggle={() => toggle(r.check)}
+              />
+            ))}
+          </div>
+
+          {/* Expanded detail — one at a time, below the strip */}
+          {expandedItem && (
+            <div ref={detailRef} style={{ scrollMarginTop: 12 }}>
+              <CheckDetail item={expandedItem} />
+            </div>
+          )}
         </div>
       </div>
     </div>
