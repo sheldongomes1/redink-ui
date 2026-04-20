@@ -1,14 +1,28 @@
-import { BigQuery } from '@google-cloud/bigquery';
+import { BigQuery, type BigQueryOptions } from '@google-cloud/bigquery';
 
 // Singleton — reused across API route invocations in the same process.
-// Uses Application Default Credentials (ADC) — no keys in code.
-// Locally: gcloud auth application-default login
-// Cloud Run: attached service account
+//
+// Credentials resolution order:
+//   1. GCP_SERVICE_ACCOUNT_JSON env var — full service-account JSON as a
+//      single string. Used on Vercel (and any host that can't provide
+//      Application Default Credentials natively).
+//   2. Application Default Credentials — used locally via
+//      `gcloud auth application-default login`, or on Cloud Run / GCE
+//      where the attached service account is picked up automatically.
 let _bq: BigQuery | null = null;
 
 export function getBQClient(): BigQuery {
   if (!_bq) {
-    _bq = new BigQuery({ projectId: 'qqq-anomaly-lab' });
+    const options: BigQueryOptions = { projectId: 'qqq-anomaly-lab' };
+    const inlineJson = process.env.GCP_SERVICE_ACCOUNT_JSON;
+    if (inlineJson) {
+      const creds = JSON.parse(inlineJson);
+      options.credentials = {
+        client_email: creds.client_email,
+        private_key:  creds.private_key,
+      };
+    }
+    _bq = new BigQuery(options);
   }
   return _bq;
 }
