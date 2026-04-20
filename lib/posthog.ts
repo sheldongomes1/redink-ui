@@ -28,3 +28,17 @@ export function capture(event: string, properties?: Record<string, unknown>) {
   if (!p) return;
   p.capture(event, properties);
 }
+
+export function identify(distinctId: string, properties?: Record<string, unknown>) {
+  if (typeof window === 'undefined') return;
+  const p = window.posthog;
+  if (!p) return;
+  p.identify(distinctId, properties);
+}
+
+export function resetPostHog() {
+  if (typeof window === 'undefined') return;
+  const p = window.posthog;
+  if (!p) return;
+  p.reset();
+}

@@ -1,7 +1,8 @@
 // Shared auth-state hook. Persists automatically via Firebase default (localStorage).
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { getFirebaseAuth, isFirebaseConfigured } from './firebase';
+import { identify, resetPostHog, capture } from './posthog';
 
 export type AuthStatus = 'loading' | 'authed' | 'unauthed' | 'unconfigured';
 
@@ -24,6 +25,7 @@ const MOCK_USER = {
 export function useAuthGate(): AuthGate {
   const [status, setStatus] = useState<AuthStatus>(DEV_BYPASS ? 'authed' : 'loading');
   const [user, setUser] = useState<User | null>(DEV_BYPASS ? MOCK_USER : null);
+  const prevUidRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (DEV_BYPASS) return;
@@ -33,6 +35,25 @@ export function useAuthGate(): AuthGate {
     return onAuthStateChanged(auth, u => {
       setUser(u);
       setStatus(u ? 'authed' : 'unauthed');
+
+      const prevUid = prevUidRef.current;
+      if (u && u.uid !== prevUid) {
+        identify(u.email ?? u.uid, {
+          email: u.email,
+          name: u.displayName,
+          uid: u.uid,
+        });
+        // Only fire login_success on a real null → user transition, not session
+        // restoration from localStorage on page reload.
+        if (prevUid === null && !sessionStorage.getItem('ph_session_identified')) {
+          capture('login_success', { provider: 'google' });
+          sessionStorage.setItem('ph_session_identified', '1');
+        }
+      } else if (!u && prevUid !== null) {
+        resetPostHog();
+        sessionStorage.removeItem('ph_session_identified');
+      }
+      prevUidRef.current = u?.uid ?? null;
     });
   }, []);
 
