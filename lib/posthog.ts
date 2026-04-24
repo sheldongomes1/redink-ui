@@ -23,6 +23,12 @@ export function initPostHog() {
     // (Settings → Session Replay → Record user sessions). With both on,
     // recordings start the next time a user loads the app.
     disable_session_recording: false,
+    // Core Web Vitals (LCP, CLS, INP) — surfaces perf issues per page in
+    // PostHog's Web Analytics.
+    capture_performance: true,
+    // Uncaught JS errors land in PostHog Error Tracking — useful for prod
+    // issues we can't reproduce locally.
+    capture_exceptions: true,
   });
   window.posthog = posthog;
 }
